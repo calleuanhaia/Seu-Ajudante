@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal de Acesso - Projeto Serviços</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 min-h-screen flex items-center justify-center font-sans text-slate-300 my-8">
+
+  <div class="bg-slate-800 p-8 rounded-lg shadow-2xl border border-yellow-600 w-full max-w-md relative overflow-hidden">
+    
+    <!-- Detalhe visual de borda superior dourada -->
+    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-400 to-yellow-600"></div>
+
+    <!-- Abas de Navegação -->
+    <div class="flex justify-between mb-4 border-b border-slate-700 pb-2">
+      <button type="button" id="btnAbaLogin" class="text-yellow-500 font-bold transition-colors">Login</button>
+      <button type="button" id="btnAbaRegistro" class="text-slate-500 hover:text-yellow-400 font-bold transition-colors">Criar Conta</button>
+    </div>
+
+    <h2 id="tituloForm" class="text-3xl font-bold text-center text-yellow-500 mb-6 uppercase tracking-wider">Acesso</h2>
+
+    <!-- Formulário Único -->
+    <form id="authForm" class="space-y-4">
+      
+      <!-- Tipo de Usuário (Cliente ou Trabalhador) -->
+      <div>
+        <label class="block text-sm font-semibold text-yellow-600 mb-1" for="tipo">Tipo de Perfil</label>
+        <select id="tipo" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded focus:outline-none focus:border-yellow-500 text-slate-100 transition-colors" required>
+          <option value="cliente">Cliente</option>
+          <option value="trabalhador">Trabalhador</option>
+        </select>
+      </div>
+
+      <!-- Usuário / Login -->
+      <div>
+        <label class="block text-sm font-semibold text-yellow-600 mb-1" for="usuario">Usuário</label>
+        <input type="text" id="usuario" placeholder="Nome de usuário" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded focus:outline-none focus:border-yellow-500 text-slate-100 transition-colors" required>
+      </div>
+
+      <!-- Campos Exclusivos do Registro (Ocultos no Login) -->
+      <div id="camposRegistro" class="space-y-4 hidden">
+        <div>
+          <label class="block text-sm font-semibold text-yellow-600 mb-1" for="email">E-mail</label>
+          <input type="email" id="email" placeholder="seu@email.com" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded focus:outline-none focus:border-yellow-500 text-slate-100 transition-colors">
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-yellow-600 mb-1" for="telefone">Telefone</label>
+          <input type="tel" id="telefone" placeholder="(00) 00000-0000" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded focus:outline-none focus:border-yellow-500 text-slate-100 transition-colors">
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-yellow-600 mb-1" for="cpf">CPF</label>
+          <input type="text" id="cpf" placeholder="Apenas números (11 dígitos)" maxlength="11" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded focus:outline-none focus:border-yellow-500 text-slate-100 transition-colors">
+        </div>
+
+        <!-- ======== SEÇÃO LOCALIZAÇÃO ======== -->
+        <div class="border-t border-slate-700 pt-4">
+          <div class="flex items-center justify-between mb-3">
+            <p class="text-sm font-bold text-yellow-500 uppercase tracking-wider flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              Localização
+            </p>
+            <!-- Botão Usar Minha Localização -->
+            <button type="button" id="btnGPS" onclick="usarGPS()"
+              class="flex items-center gap-1.5 text-xs bg-yellow-600/20 hover:bg-yellow-500/30 border border-yellow-600/40 hover:border-yellow-500 text-yellow-400 hover:text-yellow-300 font-semibold px-3 py-1.5 rounded-lg transition-all">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+              Usar minha localização
+            </button>
+          </div>
+
+          <p id="statusGPS" class="hidden text-xs text-center py-1.5 px-3 rounded-lg mb-3 bg-slate-900 text-slate-400"></p>
+
+          <!-- CEP com busca automática -->
+          <div class="mb-3">
+            <label class="block text-xs font-semibold text-yellow-600 mb-1">CEP</label>
+            <div class="flex gap-2">
+              <input type="text" id="cep" placeholder="00000-000" maxlength="9"
+                oninput="mascaraCEP(this)"
+                class="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded focus:outline-none focus:border-yellow-500 text-slate-100 text-sm transition-colors">
+              <button type="button" onclick="buscarCEP()"
+                class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded transition-colors whitespace-nowrap">
+                Buscar CEP
+              </button>
+            </div>
+          </div>
+
+          <!-- Endereço -->
+          <div class="mb-3">
+            <label class="block text-xs font-semibold text-yellow-600 mb-1">Endereço</label>
+            <input type="text" id="endereco" placeholder="Rua, número, complemento"
+              class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded focus:outline-none focus:border-yellow-500 text-slate-100 text-sm transition-colors">
+          </div>
+
+          <!-- Cidade + Estado lado a lado -->
+          <div class="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label class="block text-xs font-semibold text-yellow-600 mb-1">Cidade</label>
+              <input type="text" id="cidade" placeholder="Sua cidade"
+                class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded focus:outline-none focus:border-yellow-500 text-slate-100 text-sm transition-colors">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-yellow-600 mb-1">Estado</label>
+              <select id="estado" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded focus:outline-none focus:border-yellow-500 text-slate-100 text-sm transition-colors">
+                <option value="">UF</option>
+                <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
+                <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+                <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
+                <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
+                <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+                <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
+                <option>SP</option><option>SE</option><option>TO</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Coordenadas (preenchidas automaticamente, visíveis mas somente leitura) -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 mb-1">Latitude</label>
+              <input type="text" id="latitude" readonly placeholder="—"
+                class="w-full px-3 py-2 bg-slate-900/50 border border-slate-700/50 rounded text-slate-500 text-xs cursor-default">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 mb-1">Longitude</label>
+              <input type="text" id="longitude" readonly placeholder="—"
+                class="w-full px-3 py-2 bg-slate-900/50 border border-slate-700/50 rounded text-slate-500 text-xs cursor-default">
+            </div>
+          </div>
+        </div>
+        <!-- ======== FIM LOCALIZAÇÃO ======== -->
+
+        <!-- ======== HORÁRIOS DE TRABALHO (APENAS TRABALHADOR) ======== -->
+        <div id="secaoHorariosCadastro" class="border-t border-slate-700 pt-4 hidden">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-bold text-yellow-500 uppercase tracking-wider flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Horários de Trabalho *
+            </p>
+          </div>
+          <p class="text-xs text-slate-400 mb-3">
+            Marque os dias em que você atende. É obrigatório ter ao menos <strong>1 período</strong> marcado (períodos extras são opcionais). Aplicado automaticamente para todas as datas futuras.
+          </p>
+          <div id="cadastroDiasContainer" class="space-y-2 max-h-72 overflow-y-auto pr-1"></div>
+        </div>
+        <!-- ======== FIM HORÁRIOS ======== -->
+
+      </div>
+
+      <!-- Senha -->
+      <div>
+        <label class="block text-sm font-semibold text-yellow-600 mb-1" for="senha">Senha</label>
+        <input type="password" id="senha" placeholder="••••••••" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded focus:outline-none focus:border-yellow-500 text-slate-100 transition-colors" required>
+      </div>
+
+      <button type="submit" id="btnSubmit" class="w-full bg-yellow-600 hover:bg-yellow-500 text-slate-900 font-bold py-2 px-4 rounded transition-colors uppercase tracking-wide mt-4">
+        Entrar
+      </button>
+    </form>
+
+    <!-- Exibição de Mensagens -->
+    <div id="mensagem" class="mt-4 text-center text-sm font-bold hidden"></div>
+  </div>
+
+  <script>
+    const authForm = document.getElementById('authForm');
+    const btnAbaLogin = document.getElementById('btnAbaLogin');
+    const btnAbaRegistro = document.getElementById('btnAbaRegistro');
+    const tituloForm = document.getElementById('tituloForm');
+    const btnSubmit = document.getElementById('btnSubmit');
+    const msgDiv = document.getElementById('mensagem');
+    const camposRegistro = document.getElementById('camposRegistro');
+    const inputsRegistro = camposRegistro.querySelectorAll('input:not([readonly]):not([type="checkbox"]):not([type="time"])');
+    const secaoHorariosCadastro = document.getElementById('secaoHorariosCadastro');
+    const selectTipo = document.getElementById('tipo');
+
+    const DIAS_SEMANA_CAD = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const PERIODOS_CAD = [
+      { value: 'manha', label: 'Manhã', inicio: '09:00', fim: '11:30' },
+      { value: 'tarde', label: 'Tarde', inicio: '13:00', fim: '18:00' },
+      { value: 'noite', label: 'Noite', inicio: '19:00', fim: '22:00' },
+      { value: 'personalizado', label: 'Personalizado', inicio: '08:00', fim: '12:00' }
+    ];
+    let horariosCad = Array.from({ length: 7 }, () => ({ ativo: false, periodos: [] }));
+
+    function atualizarVisibilidadeHorarios() {
+      if (!modoLogin && selectTipo.value === 'trabalhador') {
+        secaoHorariosCadastro.classList.remove('hidden');
+        renderizarDiasCadastro();
+      } else {
+        secaoHorariosCadastro.classList.add('hidden');
+      }
+    }
+
+    function renderizarDiasCadastro() {
+      const container = document.getElementById('cadastroDiasContainer');
+      if (!container) return;
+      container.innerHTML = DIAS_SEMANA_CAD.map((nome, idx) => {
+        const cfg = horariosCad[idx];
+        return `
+          <div class="rounded-lg border ${cfg.ativo ? 'border-yellow-500/50 bg-slate-900/80' : 'border-slate-700/60 bg-slate-900/40'} p-2.5">
+            <div class="flex items-center justify-between">
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" ${cfg.ativo ? 'checked' : ''} onchange="toggleDiaCadastro(${idx})"
+                  class="w-4 h-4 accent-yellow-500 rounded cursor-pointer">
+                <span class="text-xs font-bold text-slate-200">${nome}</span>
+              </label>
+              ${cfg.ativo ? `
+                <button type="button" onclick="adicionarPeriodoCadastro(${idx})" class="text-[11px] text-yellow-400 hover:text-yellow-300 font-semibold">
+                  + Período
+                </button>` : `<span class="text-[11px] text-slate-500">Folga</span>`}
+            </div>
+            ${cfg.ativo ? `
+              <div class="mt-2 space-y-1.5">
+                ${cfg.periodos.map((p, pi) => `
+                  <div class="flex items-center gap-1.5">
+                    <select onchange="atualizarPeriodoCadastro(${idx},${pi},'periodo',this.value)"
+                      class="bg-slate-800 border border-slate-700 rounded px-1.5 py-1 text-[11px] text-slate-100 focus:outline-none focus:border-yellow-500">
+                      ${PERIODOS_CAD.map(op => `<option value="${op.value}" ${p.periodo === op.value ? 'selected' : ''}>${op.label}</option>`).join('')}
+                    </select>
+                    <input type="time" value="${p.inicio}" onchange="atualizarPeriodoCadastro(${idx},${pi},'inicio',this.value)"
+                      class="bg-slate-800 border border-slate-700 rounded px-1.5 py-1 text-[11px] text-slate-100 focus:outline-none focus:border-yellow-500">
+                    <span class="text-[11px] text-slate-500">às</span>
+                    <input type="time" value="${p.fim}" onchange="atualizarPeriodoCadastro(${idx},${pi},'fim',this.value)"
+                      class="bg-slate-800 border border-slate-700 rounded px-1.5 py-1 text-[11px] text-slate-100 focus:outline-none focus:border-yellow-500">
+                    ${cfg.periodos.length > 1 ? `
+                      <button type="button" onclick="removerPeriodoCadastro(${idx},${pi})" class="text-red-400 hover:text-red-300 text-xs font-bold px-1" title="Remover">&times;</button>
+                    ` : ''}
+                  </div>
+                `).join('')}
+              </div>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleDiaCadastro(idx) {
+      horariosCad[idx].ativo = !horariosCad[idx].ativo;
+      if (horariosCad[idx].ativo && horariosCad[idx].periodos.length === 0) {
+        horariosCad[idx].periodos.push({ periodo: 'tarde', inicio: '13:00', fim: '18:00' });
+      } else if (!horariosCad[idx].ativo) {
+        horariosCad[idx].periodos = [];
+      }
+      renderizarDiasCadastro();
+    }
+
+    function adicionarPeriodoCadastro(idx) {
+      const usadoManha = horariosCad[idx].periodos.some(p => p.periodo === 'manha');
+      const novo = usadoManha
+        ? { periodo: 'tarde', inicio: '13:00', fim: '18:00' }
+        : { periodo: 'manha', inicio: '09:00', fim: '11:30' };
+      horariosCad[idx].periodos.push(novo);
+      renderizarDiasCadastro();
+    }
+
+    function removerPeriodoCadastro(idx, pi) {
+      if (horariosCad[idx].periodos.length <= 1) return;
+      horariosCad[idx].periodos.splice(pi, 1);
+      renderizarDiasCadastro();
+    }
+
+    function atualizarPeriodoCadastro(idx, pi, campo, valor) {
+      horariosCad[idx].periodos[pi][campo] = valor;
+      if (campo === 'periodo') {
+        const preset = PERIODOS_CAD.find(x => x.value === valor);
+        if (preset) {
+          horariosCad[idx].periodos[pi].inicio = preset.inicio;
+          horariosCad[idx].periodos[pi].fim = preset.fim;
+          renderizarDiasCadastro();
+        }
+      }
+    }
+
+    selectTipo.addEventListener('change', atualizarVisibilidadeHorarios);
+
+    let modoLogin = true;
+
+    // =============================================
+    // ABAS
+    // =============================================
+    btnAbaRegistro.addEventListener('click', () => {
+      modoLogin = false;
+      tituloForm.textContent = 'Nova Conta';
+      btnSubmit.textContent = 'Registrar';
+      btnAbaRegistro.className = 'text-yellow-500 font-bold transition-colors';
+      btnAbaLogin.className = 'text-slate-500 hover:text-yellow-400 font-bold transition-colors';
+      camposRegistro.classList.remove('hidden');
+      inputsRegistro.forEach(input => input.setAttribute('required', 'true'));
+      msgDiv.classList.add('hidden');
+      atualizarVisibilidadeHorarios();
+    });
+
+    btnAbaLogin.addEventListener('click', () => {
+      modoLogin = true;
+      tituloForm.textContent = 'Acesso';
+      btnSubmit.textContent = 'Entrar';
+      btnAbaLogin.className = 'text-yellow-500 font-bold transition-colors';
+      btnAbaRegistro.className = 'text-slate-500 hover:text-yellow-400 font-bold transition-colors';
+      camposRegistro.classList.add('hidden');
+      inputsRegistro.forEach(input => input.removeAttribute('required'));
+      msgDiv.classList.add('hidden');
+      atualizarVisibilidadeHorarios();
+    });
+
+    // =============================================
+    // GEOLOCALIZAÇÃO (GPS)
+    // =============================================
+    function statusGPS(msg, cor = 'text-slate-400') {
+      const el = document.getElementById('statusGPS');
+      el.textContent = msg;
+      el.className = `text-xs text-center py-1.5 px-3 rounded-lg mb-3 bg-slate-900 ${cor}`;
+      el.classList.remove('hidden');
+    }
+
+    function usarGPS() {
+      if (!navigator.geolocation) {
+        statusGPS('Geolocalização não suportada neste navegador.', 'text-red-400');
+        return;
+      }
+      statusGPS('📡 Obtendo sua localização...', 'text-yellow-400');
+      document.getElementById('btnGPS').disabled = true;
+
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude.toFixed(7);
+          const lon = pos.coords.longitude.toFixed(7);
+          document.getElementById('latitude').value = lat;
+          document.getElementById('longitude').value = lon;
+
+          // Faz geocodificação reversa via nominatim (OpenStreetMap – sem chave)
+          statusGPS('🗺️ Buscando endereço...', 'text-yellow-400');
+          try {
+            const r = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`,
+              { headers: { 'Accept-Language': 'pt-BR' } }
+            );
+            const dados = await r.json();
+            const addr = dados.address || {};
+
+            const rua = addr.road || addr.pedestrian || addr.suburb || '';
+            const num = addr.house_number ? `, ${addr.house_number}` : '';
+            document.getElementById('endereco').value = rua + num;
+            document.getElementById('cidade').value = addr.city || addr.town || addr.village || addr.municipality || '';
+
+            const sigla = siglaEstado(addr.state || '');
+            const selEstado = document.getElementById('estado');
+            if (sigla) {
+              for (let i = 0; i < selEstado.options.length; i++) {
+                if (selEstado.options[i].value === sigla) { selEstado.selectedIndex = i; break; }
+              }
+            }
+
+            const cepAddr = (addr.postcode || '').replace(/\D/g, '').slice(0, 8);
+            if (cepAddr) document.getElementById('cep').value = cepAddr.replace(/(\d{5})(\d{3})/, '$1-$2');
+
+            statusGPS('✅ Localização preenchida com sucesso!', 'text-green-400');
+          } catch(e) {
+            statusGPS(`📍 GPS obtido (lat ${lat}, lon ${lon}). Preencha o endereço manualmente.`, 'text-yellow-400');
+          }
+          document.getElementById('btnGPS').disabled = false;
+        },
+        (err) => {
+          const msgs = { 1: 'Permissão de localização negada.', 2: 'Localização indisponível.', 3: 'Tempo esgotado.' };
+          statusGPS('⚠️ ' + (msgs[err.code] || 'Erro ao obter localização.'), 'text-red-400');
+          document.getElementById('btnGPS').disabled = false;
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+
+    // =============================================
+    // BUSCA POR CEP (ViaCEP)
+    // =============================================
+    function mascaraCEP(input) {
+      let v = input.value.replace(/\D/g, '').slice(0, 8);
+      if (v.length > 5) v = v.slice(0, 5) + '-' + v.slice(5);
+      input.value = v;
+      if (v.replace(/\D/g, '').length === 8) buscarCEP();
+    }
+
+    async function buscarCEP() {
+      const cep = document.getElementById('cep').value.replace(/\D/g, '');
+      if (cep.length !== 8) return;
+      statusGPS('🔎 Buscando CEP...', 'text-yellow-400');
+      try {
+        const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const d = await r.json();
+        if (d.erro) { statusGPS('CEP não encontrado.', 'text-red-400'); return; }
+        document.getElementById('endereco').value = d.logradouro ? `${d.logradouro}${d.complemento ? ', ' + d.complemento : ''}` : '';
+        document.getElementById('cidade').value = d.localidade || '';
+        const selEstado = document.getElementById('estado');
+        for (let i = 0; i < selEstado.options.length; i++) {
+          if (selEstado.options[i].value === d.uf) { selEstado.selectedIndex = i; break; }
+        }
+        statusGPS('✅ CEP encontrado!', 'text-green-400');
+      } catch(e) {
+        statusGPS('Erro ao buscar CEP. Verifique sua conexão.', 'text-red-400');
+      }
+    }
+
+    // Helper: nome do estado → sigla
+    function siglaEstado(nome) {
+      const mapa = {
+        'Acre':'AC','Alagoas':'AL','Amapá':'AP','Amazonas':'AM','Bahia':'BA',
+        'Ceará':'CE','Distrito Federal':'DF','Espírito Santo':'ES','Goiás':'GO',
+        'Maranhão':'MA','Mato Grosso':'MT','Mato Grosso do Sul':'MS','Minas Gerais':'MG',
+        'Pará':'PA','Paraíba':'PB','Paraná':'PR','Pernambuco':'PE','Piauí':'PI',
+        'Rio de Janeiro':'RJ','Rio Grande do Norte':'RN','Rio Grande do Sul':'RS',
+        'Rondônia':'RO','Roraima':'RR','Santa Catarina':'SC','São Paulo':'SP',
+        'Sergipe':'SE','Tocantins':'TO'
+      };
+      return mapa[nome] || '';
+    }
+
+    // =============================================
+    // SUBMISSÃO DO FORMULÁRIO
+    // =============================================
+    authForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const usuario = document.getElementById('usuario').value;
+      const senha = document.getElementById('senha').value;
+      const tipo = document.getElementById('tipo').value;
+
+      const payload = { usuario, senha, tipo };
+
+      if (!modoLogin) {
+        payload.email     = document.getElementById('email').value;
+        payload.telefone  = document.getElementById('telefone').value;
+        payload.cpf       = document.getElementById('cpf').value;
+        payload.endereco  = document.getElementById('endereco').value;
+        payload.cidade    = document.getElementById('cidade').value;
+        payload.estado    = document.getElementById('estado').value;
+        payload.cep       = document.getElementById('cep').value.replace(/\D/g, '');
+        payload.latitude  = document.getElementById('latitude').value || null;
+        payload.longitude = document.getElementById('longitude').value || null;
+
+        if (tipo === 'trabalhador') {
+          const horariosLista = [];
+          for (let d = 0; d < 7; d++) {
+            const cfg = horariosCad[d];
+            if (!cfg.ativo) continue;
+            if (cfg.periodos.length === 0) {
+              msgDiv.textContent = `Erro: ${DIAS_SEMANA_CAD[d]} precisa de ao menos 1 período.`;
+              msgDiv.classList.remove('hidden', 'text-green-500');
+              msgDiv.classList.add('text-red-500');
+              return;
+            }
+            for (const p of cfg.periodos) {
+              if (!p.inicio || !p.fim || p.inicio >= p.fim) {
+                msgDiv.textContent = `Erro: Horário inválido em ${DIAS_SEMANA_CAD[d]} (início deve ser antes do fim).`;
+                msgDiv.classList.remove('hidden', 'text-green-500');
+                msgDiv.classList.add('text-red-500');
+                return;
+              }
+              horariosLista.push({
+                dia_semana: d,
+                periodo: p.periodo,
+                hora_inicio: p.inicio,
+                hora_fim: p.fim
+              });
+            }
+          }
+          if (horariosLista.length === 0) {
+            msgDiv.textContent = 'Erro: Selecione ao menos 1 dia e 1 período de trabalho.';
+            msgDiv.classList.remove('hidden', 'text-green-500');
+            msgDiv.classList.add('text-red-500');
+            return;
+          }
+          payload.horarios = horariosLista;
+        }
+      }
+
+      const url = modoLogin ? '/login' : '/registrar';
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        msgDiv.classList.remove('hidden', 'text-red-500', 'text-green-500');
+
+        if (response.ok) {
+          msgDiv.classList.add('text-green-500');
+
+          if (modoLogin) {
+            msgDiv.textContent = 'Acesso Concedido! Redirecionando...';
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('tipoPerfil', data.tipo);
+            localStorage.setItem('nomeUsuario', usuario);
+            setTimeout(() => { window.location.href = 'home.html'; }, 1000);
+          } else {
+            msgDiv.textContent = data.mensagem || 'Conta criada com sucesso!';
+            setTimeout(() => {
+              btnAbaLogin.click();
+              document.getElementById('senha').value = '';
+            }, 1500);
+          }
+        } else {
+          msgDiv.textContent = 'Erro: ' + (data.erro || 'Falha na requisição.');
+          msgDiv.classList.add('text-red-500');
+        }
+      } catch (error) {
+        console.error('Erro de rede:', error);
+        msgDiv.textContent = 'Erro de conexão com o servidor.';
+        msgDiv.classList.remove('hidden');
+        msgDiv.classList.add('text-red-500');
+      }
+    });
+  </script>
+</body>
+</html>

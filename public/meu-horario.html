@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meus Horários - Projeto Serviços</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans h-screen flex flex-col md:flex-row overflow-hidden">
+
+  <!-- ========================================== -->
+  <!-- MENU LATERAL (SIDEBAR FIXA)                -->
+  <!-- ========================================== -->
+  <aside class="w-full md:w-64 flex-shrink-0 h-full bg-slate-800 border-r border-slate-700/60 flex flex-col justify-between p-4 relative z-30">
+    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-400 to-yellow-600"></div>
+
+    <div>
+      <!-- LOGO / TITULO -->
+      <div class="flex items-center gap-3 py-4 border-b border-slate-700/60 mb-6">
+        <div class="w-10 h-10 rounded-lg bg-yellow-600 text-slate-900 font-bold flex items-center justify-center text-xl shadow-lg">PS</div>
+        <div>
+          <h1 class="font-bold text-slate-100 leading-tight">ProjetoServiços</h1>
+          <p id="nomeUsuarioDisplay" class="text-sm text-slate-200 mt-1 mb-1"></p>
+          <span id="badgeTipoPerfil" class="text-xs text-yellow-500 font-semibold uppercase tracking-wider">Carregando...</span>
+        </div>
+      </div>
+
+      <!-- LINKS DO MENU -->
+      <nav class="space-y-1">
+        <a href="home.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-700/50 rounded-lg font-medium transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 00-1 1m-6 0h6"/></svg>
+          Início / Painel
+        </a>
+
+        <a href="meus-servicos.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-700/50 rounded-lg font-medium transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          Meus Serviços
+        </a>
+
+        <a href="calendario.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-700/50 rounded-lg font-medium transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          Calendário
+        </a>
+
+        <a href="cadastrar-servico.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-700/50 rounded-lg font-medium transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          + Cadastrar Meu Serviço
+        </a>
+
+        <!-- HORÁRIOS (ATIVO) -->
+        <a href="meu-horario.html" class="flex items-center gap-3 px-4 py-3 text-yellow-500 bg-slate-900/60 rounded-lg font-medium border-l-4 border-yellow-500 transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Meus Horários
+        </a>
+      </nav>
+    </div>
+
+    <!-- BOTÃO LOGOUT -->
+    <div class="pt-6 border-t border-slate-700/60 mt-6">
+      <button id="btnLogout" class="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-red-950/40 text-red-400 hover:text-red-300 border border-slate-700 hover:border-red-800 font-semibold py-2 px-4 rounded-lg transition-all text-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        Sair da Conta
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========================================== -->
+  <!-- ÁREA PRINCIPAL                             -->
+  <!-- ========================================== -->
+  <main class="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
+
+    <!-- HEADER -->
+    <header class="flex-shrink-0 bg-slate-800 border-b border-slate-700/60 p-4 px-6 relative z-20">
+      <h2 class="text-xl font-bold text-slate-100">Meus Horários de Trabalho</h2>
+      <p class="text-xs text-slate-400">Configure os dias e períodos em que você está disponível para atendimento</p>
+    </header>
+
+    <!-- CONTEÚDO SCROLLÁVEL -->
+    <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+
+      <!-- AVISO -->
+      <div class="bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-3 text-sm text-yellow-300 flex items-start gap-3">
+        <svg class="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>Os horários cadastrados aqui definem quando os clientes poderão agendar seus serviços. Cada dia precisa de <strong>ao menos um período</strong>. Os horários se aplicam para todas as semanas futuras.</span>
+      </div>
+
+      <!-- CONFIGURAÇÃO DE DIAS -->
+      <div class="bg-slate-800 rounded-xl border border-slate-700/60 p-5">
+        <h3 class="text-base font-bold text-slate-100 mb-4">Dias e Períodos de Atendimento</h3>
+
+        <div id="containerDias" class="space-y-4">
+          <!-- Gerado pelo JS -->
+        </div>
+
+        <!-- BOTÃO SALVAR -->
+        <div class="mt-6 flex flex-col sm:flex-row gap-3 items-center">
+          <button onclick="salvarHorarios()" class="w-full sm:w-auto px-8 py-3 bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            Salvar Horários
+          </button>
+          <div id="msgSalvar" class="hidden text-sm font-semibold"></div>
+        </div>
+      </div>
+
+      <!-- PRÉVIA DOS HORÁRIOS SALVOS -->
+      <div id="painelPrevia" class="bg-slate-800 rounded-xl border border-slate-700/60 p-5 hidden">
+        <h3 class="text-base font-bold text-slate-100 mb-3 flex items-center gap-2">
+          <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          Horários Ativos
+        </h3>
+        <div id="listaPrevia" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+      </div>
+
+    </div><!-- /conteúdo scrollável -->
+  </main>
+
+  <script>
+    // =============================================
+    // CONFIGURAÇÃO GLOBAL
+    // =============================================
+    const token = localStorage.getItem('token');
+    const tipoPerfil = localStorage.getItem('tipoPerfil');
+    const nomeUsuario = localStorage.getItem('nomeUsuario') || '';
+
+    const DIAS_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const PERIODOS_LABELS = ['Manhã', 'Tarde', 'Noite', 'Personalizado'];
+
+    // Estado: diasAtivos[0..6] = { ativo: bool, periodos: [{label, inicio, fim}] }
+    let diasConfig = Array.from({length: 7}, () => ({ ativo: false, periodos: [] }));
+
+    // =============================================
+    // INICIALIZAÇÃO
+    // =============================================
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!token) { window.location.href = 'index.html'; return; }
+      if (tipoPerfil !== 'trabalhador') { window.location.href = 'home.html'; return; }
+
+      document.getElementById('nomeUsuarioDisplay').textContent = nomeUsuario;
+      document.getElementById('badgeTipoPerfil').textContent = 'Trabalhador';
+
+      await carregarHorariosExistentes();
+      renderizarDias();
+
+      document.getElementById('btnLogout').addEventListener('click', () => {
+        if (confirm('Deseja realmente sair da conta?')) {
+          localStorage.clear();
+          window.location.href = 'index.html';
+        }
+      });
+    });
+
+    // =============================================
+    // CARREGAR HORÁRIOS DO SERVIDOR
+    // =============================================
+    async function carregarHorariosExistentes() {
+      try {
+        const res = await fetch('/meu-horario', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const rows = await res.json();
+
+        rows.forEach(row => {
+          const dia = row.dia_semana;
+          if (!diasConfig[dia].ativo) diasConfig[dia].ativo = true;
+          diasConfig[dia].periodos.push({
+            label: capitalize(row.periodo),
+            inicio: row.hora_inicio.substring(0, 5),
+            fim: row.hora_fim.substring(0, 5)
+          });
+        });
+
+        atualizarPrevia(rows);
+      } catch(e) {
+        console.error('Erro ao carregar horários:', e);
+      }
+    }
+
+    function capitalize(str) {
+      return str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+    }
+
+    // =============================================
+    // RENDERIZAR INTERFACE DE DIAS
+    // =============================================
+    function renderizarDias() {
+      const container = document.getElementById('containerDias');
+      container.innerHTML = '';
+
+      DIAS_SEMANA.forEach((nomeDia, idx) => {
+        const cfg = diasConfig[idx];
+        const isAtivo = cfg.ativo;
+
+        const card = document.createElement('div');
+        card.className = `rounded-xl border transition-all ${isAtivo ? 'border-yellow-500/50 bg-slate-900/60' : 'border-slate-700/40 bg-slate-900/30'}`;
+        card.id = `card-dia-${idx}`;
+
+        // Header do dia
+        card.innerHTML = `
+          <div class="flex items-center gap-3 p-4 cursor-pointer select-none" onclick="toggleDia(${idx})">
+            <div class="relative w-5 h-5 flex-shrink-0">
+              <input type="checkbox" id="chk-dia-${idx}" class="peer appearance-none w-5 h-5 rounded border-2 border-slate-600 bg-slate-800 checked:bg-yellow-500 checked:border-yellow-500 cursor-pointer transition-all" ${isAtivo ? 'checked' : ''} onclick="event.stopPropagation(); toggleDia(${idx})">
+              <svg class="hidden peer-checked:block absolute inset-0 w-5 h-5 text-slate-900 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <span class="font-bold text-slate-100 w-8">${nomeDia}</span>
+            ${isAtivo ? `<span class="text-xs text-yellow-400 font-medium">${cfg.periodos.length} período(s)</span>` : '<span class="text-xs text-slate-500">Não trabalha</span>'}
+            <svg class="w-4 h-4 text-slate-500 ml-auto transition-transform ${isAtivo ? 'rotate-180' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+          <div id="painel-dia-${idx}" class="${isAtivo ? '' : 'hidden'} px-4 pb-4 space-y-3">
+            <div id="lista-periodos-${idx}" class="space-y-2">
+              ${cfg.periodos.map((p, pi) => htmlPeriodo(idx, pi, p.label, p.inicio, p.fim)).join('')}
+            </div>
+            ${cfg.periodos.length === 0 ? `<p class="text-xs text-yellow-400 flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> Adicione ao menos um período</p>` : ''}
+            <button onclick="adicionarPeriodo(${idx})" class="mt-1 flex items-center gap-1 text-xs text-yellow-400 hover:text-yellow-300 font-semibold transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              Adicionar Período
+            </button>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function htmlPeriodo(diaIdx, perIdx, label, inicio, fim) {
+      const optsLabel = PERIODOS_LABELS.map(l =>
+        `<option value="${l.toLowerCase()}" ${label && label.toLowerCase() === l.toLowerCase() ? 'selected' : ''}>${l}</option>`
+      ).join('');
+
+      return `
+        <div class="flex items-center gap-2 bg-slate-800 rounded-lg p-2.5 border border-slate-700/60" id="periodo-${diaIdx}-${perIdx}">
+          <select onchange="atualizarPeriodo(${diaIdx},${perIdx},'label',this.value)" class="bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-slate-100 text-xs focus:outline-none focus:border-yellow-500 w-28">
+            ${optsLabel}
+          </select>
+          <span class="text-slate-500 text-xs">de</span>
+          <input type="time" value="${inicio}" onchange="atualizarPeriodo(${diaIdx},${perIdx},'inicio',this.value)" class="bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-slate-100 text-xs focus:outline-none focus:border-yellow-500 w-24">
+          <span class="text-slate-500 text-xs">até</span>
+          <input type="time" value="${fim}" onchange="atualizarPeriodo(${diaIdx},${perIdx},'fim',this.value)" class="bg-slate-900 border border-slate-600 rounded-lg px-2 py-1.5 text-slate-100 text-xs focus:outline-none focus:border-yellow-500 w-24">
+          <button onclick="removerPeriodo(${diaIdx},${perIdx})" class="ml-auto p-1 rounded hover:bg-red-950/40 text-red-400 hover:text-red-300 transition-all flex-shrink-0" title="Remover período">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+      `;
+    }
+
+    // =============================================
+    // AÇÕES
+    // =============================================
+    function toggleDia(idx) {
+      diasConfig[idx].ativo = !diasConfig[idx].ativo;
+      if (!diasConfig[idx].ativo) diasConfig[idx].periodos = [];
+      renderizarDias();
+    }
+
+    function adicionarPeriodo(diaIdx) {
+      diasConfig[diaIdx].periodos.push({ label: 'Tarde', inicio: '13:00', fim: '18:00' });
+      renderizarDias();
+    }
+
+    function removerPeriodo(diaIdx, perIdx) {
+      diasConfig[diaIdx].periodos.splice(perIdx, 1);
+      renderizarDias();
+    }
+
+    function atualizarPeriodo(diaIdx, perIdx, campo, valor) {
+      diasConfig[diaIdx].periodos[perIdx][campo] = valor;
+    }
+
+    // =============================================
+    // SALVAR
+    // =============================================
+    async function salvarHorarios() {
+      const msgEl = document.getElementById('msgSalvar');
+      msgEl.className = 'text-sm font-semibold';
+      msgEl.classList.remove('hidden');
+      msgEl.textContent = 'Salvando...';
+
+      // Monta array de horários
+      const horarios = [];
+      let erros = [];
+
+      diasConfig.forEach((cfg, diaIdx) => {
+        if (!cfg.ativo) return;
+
+        if (cfg.periodos.length === 0) {
+          erros.push(`${DIAS_SEMANA[diaIdx]} está marcado mas sem nenhum período.`);
+          return;
+        }
+
+        cfg.periodos.forEach((p, pi) => {
+          if (!p.inicio || !p.fim) {
+            erros.push(`${DIAS_SEMANA[diaIdx]} período ${pi+1}: horário incompleto.`);
+            return;
+          }
+          if (p.inicio >= p.fim) {
+            erros.push(`${DIAS_SEMANA[diaIdx]} período ${pi+1}: início deve ser antes do fim.`);
+            return;
+          }
+          horarios.push({
+            dia_semana: diaIdx,
+            periodo: (p.label || 'personalizado').toLowerCase(),
+            hora_inicio: p.inicio,
+            hora_fim: p.fim
+          });
+        });
+      });
+
+      if (horarios.length === 0 && erros.length === 0) {
+        // Nenhum dia selecionado — avisa mas permite salvar (remove todos os horários)
+        if (!confirm('Nenhum dia está selecionado. Isso removerá todos os seus horários e clientes não conseguirão agendar. Continuar?')) {
+          msgEl.classList.add('hidden');
+          return;
+        }
+      }
+
+      if (erros.length > 0) {
+        msgEl.textContent = erros[0];
+        msgEl.classList.add('text-red-400');
+        return;
+      }
+
+      try {
+        const res = await fetch('/meu-horario', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ horarios })
+        });
+        const dados = await res.json();
+        if (!res.ok) {
+          msgEl.textContent = dados.erro || 'Erro ao salvar.';
+          msgEl.classList.add('text-red-400');
+          return;
+        }
+        msgEl.textContent = '✓ Horários salvos com sucesso!';
+        msgEl.classList.remove('text-red-400');
+        msgEl.classList.add('text-green-400');
+        atualizarPrevia(horarios.map(h => ({...h, hora_inicio: h.hora_inicio + ':00', hora_fim: h.hora_fim + ':00'})));
+        setTimeout(() => msgEl.classList.add('hidden'), 3000);
+      } catch(e) {
+        msgEl.textContent = 'Erro de conexão.';
+        msgEl.classList.add('text-red-400');
+      }
+    }
+
+    // =============================================
+    // PRÉVIA DOS HORÁRIOS SALVOS
+    // =============================================
+    function atualizarPrevia(rows) {
+      if (!rows || rows.length === 0) {
+        document.getElementById('painelPrevia').classList.add('hidden');
+        return;
+      }
+
+      // Agrupa por dia
+      const porDia = {};
+      rows.forEach(r => {
+        const d = r.dia_semana;
+        if (!porDia[d]) porDia[d] = [];
+        porDia[d].push(r);
+      });
+
+      const lista = document.getElementById('listaPrevia');
+      lista.innerHTML = Object.entries(porDia).sort((a,b) => a[0]-b[0]).map(([diaIdx, hrs]) => `
+        <div class="bg-slate-900/60 rounded-xl border border-slate-700/60 p-3">
+          <p class="font-bold text-yellow-400 text-sm mb-2">${DIAS_SEMANA[diaIdx]}</p>
+          <div class="space-y-1">
+            ${hrs.map(h => `
+              <div class="flex items-center justify-between text-xs text-slate-300">
+                <span class="text-slate-400 capitalize">${h.periodo}</span>
+                <span class="font-mono bg-slate-800 rounded px-2 py-0.5">${(h.hora_inicio||'').substring(0,5)} – ${(h.hora_fim||'').substring(0,5)}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('painelPrevia').classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>

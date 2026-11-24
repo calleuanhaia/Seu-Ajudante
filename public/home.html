@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel - Projeto Serviços</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<!-- BODY: Fixo na altura da tela (h-screen) e sem barra de rolagem geral (overflow-hidden) -->
+<body class="bg-slate-900 text-slate-200 font-sans h-screen flex flex-col md:flex-row overflow-hidden">
+
+  <!-- ========================================== -->
+  <!-- 1. MENU LATERAL (SIDEBAR FIXA)             -->
+  <!-- ========================================== -->
+  <aside class="w-full md:w-64 flex-shrink-0 h-full bg-slate-800 border-r border-slate-700/60 flex flex-col justify-between p-4 relative z-30">
+    
+    <!-- Detalhe superior em gradiente dourado -->
+    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-400 to-yellow-600"></div>
+
+    <div>
+      <!-- LOGO / TITULO -->
+      <div class="flex items-center gap-3 py-4 border-b border-slate-700/60 mb-6">
+        <div class="w-10 h-10 rounded-lg bg-yellow-600 text-slate-900 font-bold flex items-center justify-center text-xl shadow-lg">
+          PS
+        </div>
+        <div>
+          <h1 class="font-bold text-slate-100 leading-tight">ProjetoServiços</h1>
+          <p id="nomeUsuarioDisplay" class="text-sm text-slate-200 mt-1 mb-1"></p>
+          <span id="badgeTipoPerfil" class="text-xs text-yellow-500 font-semibold uppercase tracking-wider">Carregando...</span>
+        </div>
+      </div>
+
+      <!-- LINKS DO MENU -->
+      <nav class="space-y-1">
+        <a href="#" class="flex items-center gap-3 px-4 py-3 text-yellow-500 bg-slate-900/60 rounded-lg font-medium border-l-4 border-yellow-500 transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 00-1 1m-6 0h6"/></svg>
+          Início / Painel
+        </a>
+
+        <a href="meus-servicos.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-700/50 rounded-lg font-medium transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          Meus Serviços
+        </a>
+
+        <a href="calendario.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-700/50 rounded-lg font-medium transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          Calendário
+        </a>
+
+        <a id="btnCadastrarNovoServico" href="cadastrar-servico.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-700/50 rounded-lg font-medium transition-all hidden">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          + Cadastrar Meu Serviço
+        </a>
+
+        <a id="linkMeuHorario" href="meu-horario.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-700/50 rounded-lg font-medium transition-all hidden">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Meus Horários
+        </a>
+      </nav>
+    </div>
+
+    <!-- BOTÃO LOGOUT -->
+    <div class="pt-6 border-t border-slate-700/60 mt-6">
+      <button id="btnLogout" class="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-red-950/40 text-red-400 hover:text-red-300 border border-slate-700 hover:border-red-800 font-semibold py-2 px-4 rounded-lg transition-all text-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        Sair da Conta
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========================================== -->
+  <!-- 2. ÁREA PRINCIPAL CONTAINER (FIXA)         -->
+  <!-- ========================================== -->
+  <main class="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
+
+    <!-- HEADER SUPERIOR (FIXO) -->
+    <header class="flex-shrink-0 bg-slate-800 border-b border-slate-700/60 p-4 px-6 flex items-center justify-between relative z-20">
+      <div>
+        <h2 class="text-xl font-bold text-slate-100">Visão Geral</h2>
+        <p class="text-xs text-slate-400">Bem-vindo(a) ao seu painel de controle</p>
+      </div>
+
+      <!-- STATUS & NOTIFICAÇÕES -->
+      <div class="flex items-center gap-4">
+        
+        <!-- PAINEL / BOTÃO DE NOTIFICAÇÕES -->
+        <div class="relative">
+          <button id="btnNotificacoes" onclick="toggleDropdownNotificacoes()" class="relative p-2 bg-slate-900 border border-slate-700 hover:border-yellow-500/50 rounded-full text-slate-300 hover:text-yellow-500 transition-all focus:outline-none">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9"/>
+            </svg>
+            <span id="badgeNotificacoes" class="absolute -top-1 -right-1 bg-yellow-500 text-slate-900 text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
+          </button>
+
+          <!-- DROPDOWN DE NOTIFICAÇÕES -->
+          <div id="dropdownNotificacoes" class="hidden absolute right-0 mt-3 w-80 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl overflow-hidden z-50">
+            <div class="p-3 bg-slate-900 border-b border-slate-700/80 flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-yellow-500">Notificações</span>
+              <span id="txtQtdNotificacoes" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700">0 novas</span>
+            </div>
+
+            <div id="containerListaNotificacoes" class="max-h-64 overflow-y-auto divide-y divide-slate-700/50">
+              <div class="p-6 text-center text-slate-500 italic text-xs">
+                Nenhuma notificação no momento.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INDICADOR DE STATUS ONLINE -->
+        <div class="flex items-center gap-2 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-full text-xs">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="text-slate-300 font-medium hidden sm:inline">Status: ONLINE</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTEÚDO DA PÁGINA (ÚNICO ELEMENTO COM ROLAGEM INTERNA) -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- CARDS DE ESTATÍSTICAS / RESUMO (OCULTO PARA TRABALHADORES) -->
+      <div id="secaoCardsStatus" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        
+        <div class="bg-slate-800 border border-slate-700/80 rounded-xl p-5 shadow-lg relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-2 h-full bg-yellow-500"></div>
+          <p id="lblCard1" class="text-xs font-semibold uppercase text-slate-400 tracking-wider">Aguardando Aprovação</p>
+          <h3 id="qtdCard1" class="text-3xl font-extrabold text-slate-100 mt-2">0</h3>
+          <p id="descCard1" class="text-xs text-slate-500 mt-1">Serviços pendentes de resposta</p>
+        </div>
+
+        <div class="bg-slate-800 border border-slate-700/80 rounded-xl p-5 shadow-lg relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-2 h-full bg-blue-500"></div>
+          <p id="lblCard2" class="text-xs font-semibold uppercase text-slate-400 tracking-wider">Em Andamento</p>
+          <h3 id="qtdCard2" class="text-3xl font-extrabold text-slate-100 mt-2">0</h3>
+          <p id="descCard2" class="text-xs text-slate-500 mt-1">Serviços sendo executados</p>
+        </div>
+
+        <div class="bg-slate-800 border border-slate-700/80 rounded-xl p-5 shadow-lg relative overflow-hidden">
+          <div class="absolute top-0 right-0 w-2 h-full bg-emerald-500"></div>
+          <p id="lblCard3" class="text-xs font-semibold uppercase text-slate-400 tracking-wider">Concluídos</p>
+          <h3 id="qtdCard3" class="text-3xl font-extrabold text-slate-100 mt-2">0</h3>
+          <p id="descCard3" class="text-xs text-slate-500 mt-1">Histórico de trabalhos finalizados</p>
+        </div>
+
+      </div>
+
+      <!-- FEED DE SERVIÇOS OFERECIDOS (EXCLUSIVO CLIENTES) -->
+      <div id="secaoFeedServicos" class="hidden space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-700 pb-3">
+          <div>
+            <h3 class="text-xl font-bold text-yellow-500">Catálogo de Serviços Disponíveis</h3>
+            <p class="text-xs text-slate-400">Encontre profissionais próximos a você e filtre por preço, avaliação ou cidade</p>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span id="badgeLocalizacaoFeed" class="text-xs bg-slate-800 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg">
+              📍 Verificando localização...
+            </span>
+            <button type="button" onclick="usarGPSFeed()" class="text-xs bg-yellow-600/20 hover:bg-yellow-500/30 border border-yellow-500/40 text-yellow-400 font-semibold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              Usar GPS Agora
+            </button>
+          </div>
+        </div>
+
+        <!-- BARRA DE FILTROS -->
+        <div class="bg-slate-800/90 border border-slate-700/80 rounded-xl p-4 space-y-3 shadow-lg">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Buscar serviço ou profissional</label>
+              <input id="filtroBusca" type="text" placeholder="Ex: encanador, pintor, João..."
+                class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500">
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Cidade</label>
+              <input id="filtroCidade" type="text" placeholder="Ex: São Paulo"
+                class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500">
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Estado (UF)</label>
+              <select id="filtroEstado" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100 focus:outline-none focus:border-yellow-500">
+                <option value="">Todos os estados</option>
+                <option>AC</option><option>AL</option><option>AP</option><option>AM</option>
+                <option>BA</option><option>CE</option><option>DF</option><option>ES</option>
+                <option>GO</option><option>MA</option><option>MT</option><option>MS</option>
+                <option>MG</option><option>PA</option><option>PB</option><option>PR</option>
+                <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+                <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
+                <option>SP</option><option>SE</option><option>TO</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Ordenar por</label>
+              <select id="filtroOrdenar" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100 focus:outline-none focus:border-yellow-500">
+                <option value="proximidade">Mais próximos primeiro</option>
+                <option value="recentes">Mais recentes</option>
+                <option value="menor_preco">Menor preço</option>
+                <option value="maior_preco">Maior preço</option>
+                <option value="melhor_avaliacao">Melhor avaliação</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Distância máxima</label>
+              <select id="filtroRaioKm" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100 focus:outline-none focus:border-yellow-500">
+                <option value="">Qualquer distância</option>
+                <option value="5">Até 5 km</option>
+                <option value="10">Até 10 km</option>
+                <option value="25">Até 25 km</option>
+                <option value="50">Até 50 km</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Preço máximo (R$)</label>
+              <input id="filtroPrecoMax" type="number" min="0" step="10" placeholder="Ex: 250"
+                class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-500">
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-400 uppercase mb-1">Avaliação mínima</label>
+              <select id="filtroNotaMin" class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100 focus:outline-none focus:border-yellow-500">
+                <option value="">Todas as notas</option>
+                <option value="3">3★ ou mais</option>
+                <option value="4">4★ ou mais</option>
+                <option value="4.5">4.5★ ou mais</option>
+              </select>
+            </div>
+
+            <div class="flex gap-2">
+              <button type="button" onclick="aplicarFiltrosFeed()" class="flex-1 bg-yellow-600 hover:bg-yellow-500 text-slate-900 font-bold py-2 px-4 rounded-lg text-xs uppercase tracking-wider transition-all">
+                Filtrar
+              </button>
+              <button type="button" onclick="limparFiltrosFeed()" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 font-semibold rounded-lg text-xs uppercase tracking-wider transition-all">
+                Limpar
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-1 border-t border-slate-700/50">
+            <span id="contadorFeed" class="text-xs text-slate-400">Carregando serviços...</span>
+          </div>
+        </div>
+
+        <div id="containerFeedServicos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <p class="text-slate-400 italic text-sm col-span-full">Carregando serviços disponíveis...</p>
+        </div>
+      </div>
+
+      <!-- TABELA DE ATIVIDADES / SERVIÇOS OFERECIDOS -->
+      <div class="bg-slate-800 border border-slate-700/80 rounded-xl p-6 shadow-lg">
+        <div class="flex items-center justify-between mb-4">
+          <h3 id="tituloTabelaRecentes" class="text-lg font-bold text-yellow-500">Últimas Atividades Recentes</h3>
+          <span class="text-xs text-slate-400" id="subtituloTabelaRecentes">Atualizado recentemente</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="text-xs uppercase bg-slate-900/80 text-yellow-600 border-b border-slate-700">
+              <tr id="headersTabela">
+                <th class="px-4 py-3">ID</th>
+                <th class="px-4 py-3">Serviço / Item</th>
+                <th class="px-4 py-3">Cliente / Profissional</th>
+                <th class="px-4 py-3">Valor</th>
+                <th class="px-4 py-3">Status</th>
+                <th class="px-4 py-3 text-right">Ação</th>
+              </tr>
+            </thead>
+            <tbody id="bodyTabelaRecentes" class="divide-y divide-slate-700/50">
+              <tr>
+                <td colspan="6" class="px-4 py-8 text-center text-slate-500 italic">
+                  Nenhuma atividade registrada até o momento.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL DE DETALHES DO SERVIÇO -->
+  <div id="modalDetalhes" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-800 border border-slate-700 rounded-xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden">
+      
+      <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-400 to-yellow-600"></div>
+
+      <!-- CABEÇALHO DO MODAL -->
+      <div class="p-6 border-b border-slate-700 flex justify-between items-start">
+        <div>
+          <span id="modalTrabalhador" class="text-xs bg-yellow-500/10 text-yellow-500 font-semibold px-2.5 py-1 rounded border border-yellow-500/30 uppercase tracking-wider">
+            Profissional
+          </span>
+          <h3 id="modalTitulo" class="text-2xl font-bold text-slate-100 mt-2">Título do Serviço</h3>
+          <p id="modalPreco" class="text-xl font-extrabold text-emerald-400 mt-1">R$ 0,00</p>
+        </div>
+        <button onclick="fecharModalDetalhes()" class="text-slate-400 hover:text-slate-100 p-1 rounded-lg hover:bg-slate-700/50 transition-colors">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- CORPO ROLÁVEL DO MODAL -->
+      <div class="p-6 overflow-y-auto space-y-6 flex-1 text-slate-300">
+        <!-- Descrição -->
+        <div>
+          <h4 class="text-sm font-bold uppercase tracking-wider text-yellow-500 mb-2">Descrição Completa</h4>
+          <p id="modalDescricao" class="text-sm text-slate-300 leading-relaxed bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
+            Carregando descrição...
+          </p>
+        </div>
+
+        <!-- BLOCO DE CONTRATAÇÃO (EXCLUSIVO CLIENTE) -->
+        <div id="containerContratacaoCliente" class="space-y-4">
+          <div id="infoHorarioPrestadorHome" class="hidden text-xs bg-slate-900/80 border border-slate-700 rounded-lg p-3 space-y-1"></div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-900/50 p-4 rounded-lg border border-slate-700/60">
+            <div>
+              <label for="inputDataServico" class="block text-xs font-semibold text-yellow-500 uppercase tracking-wider mb-1">
+                Data do Agendamento *
+              </label>
+              <input type="date" id="inputDataServico" onchange="atualizarSlotsHome()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-yellow-500">
+            </div>
+            <div>
+              <label for="inputHoraServico" class="block text-xs font-semibold text-yellow-500 uppercase tracking-wider mb-1">
+                Horário *
+              </label>
+              <select id="inputHoraServico" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-yellow-500">
+                <option value="">Selecione a data primeiro...</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- ESPECIFICAÇÕES DO CLIENTE -->
+          <div>
+            <label for="txtEspecificacoes" class="block text-xs font-semibold text-yellow-500 uppercase tracking-wider mb-2">
+              Especificações ou detalhes adicionais do serviço:
+            </label>
+            <textarea 
+              id="txtEspecificacoes" 
+              rows="3" 
+              class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-yellow-500 transition-all resize-none"
+              placeholder="Ex: Preciso da pintura em 2 cômodos, paredes de 3x4m, prefiro atendimento no sábado pela manhã..."
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Avaliações & Comentários -->
+        <div class="border-t border-slate-700/60 pt-6">
+          <h4 class="text-sm font-bold uppercase tracking-wider text-yellow-500 mb-4">Avaliações & Comentários</h4>
+
+          <form id="formNovaAvaliacao" class="bg-slate-900/60 p-4 rounded-lg border border-slate-700/60 mb-6 space-y-3">
+            <label class="block text-xs font-semibold text-slate-300 uppercase">Deixe sua Avaliação</label>
+            
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-slate-400">Sua nota:</span>
+              <select id="selectNotaAvaliacao" class="bg-slate-800 border border-slate-700 text-yellow-400 text-sm font-bold rounded px-2 py-1 focus:outline-none focus:border-yellow-500">
+                <option value="5">★★★★★ (5)</option>
+                <option value="4">★★★★☆ (4)</option>
+                <option value="3">★★★☆☆ (3)</option>
+                <option value="2">★★☆☆☆ (2)</option>
+                <option value="1">★☆☆☆☆ (1)</option>
+              </select>
+            </div>
+
+            <textarea id="txtComentarioAvaliacao" rows="2" placeholder="Escreva seu comentário..." class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded text-xs text-slate-100 focus:outline-none focus:border-yellow-500 transition-colors" required></textarea>
+
+            <button type="submit" class="bg-yellow-600 hover:bg-yellow-500 text-slate-900 font-bold py-1.5 px-4 rounded text-xs uppercase tracking-wider transition-colors">
+              Enviar Avaliação
+            </button>
+          </form>
+
+          <div id="msgJaAvaliou" class="hidden bg-slate-900/60 p-3.5 rounded-lg border border-yellow-500/30 text-yellow-500 text-xs font-semibold mb-6 flex items-center gap-2">
+            <svg class="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            Você já avaliou este serviço.
+          </div>
+
+          <div id="listaComentarios" class="space-y-3">
+            <p class="text-xs text-slate-500 italic">Nenhum comentário registrado ainda.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- RODAPÉ DO MODAL (APENAS OS BOTÕES) -->
+      <div class="p-4 border-t border-slate-700 bg-slate-800/80 flex items-center justify-between gap-3">
+        <button onclick="fecharModalDetalhes()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-bold uppercase tracking-wider rounded transition-colors">
+          Fechar
+        </button>
+        <button id="btnSolicitarContratacaoModal" class="px-6 py-2 bg-yellow-600 hover:bg-yellow-500 text-slate-900 text-xs font-bold uppercase tracking-wider rounded transition-colors">
+          Solicitar Contratação
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- LÓGICA JAVASCRIPT -->
+  <script>
+    let servicoSelecionadoId = null;
+    let servicoAtualModal = null;
+    let gpsFeedAtual = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('token');
+      const tipoPerfil = localStorage.getItem('tipoPerfil');
+      const nomeUsuario = localStorage.getItem('nomeUsuario');
+
+      if (!token) {
+        alert('Você precisa estar logado para acessar esta página!');
+        window.location.href = 'index.html';
+        return;
+      }
+
+      const badge = document.getElementById('badgeTipoPerfil');
+      if (badge && tipoPerfil) {
+        badge.textContent = tipoPerfil === 'cliente' ? 'Perfil: Cliente' : 'Perfil: Trabalhador';
+      }
+
+      const displayNome = document.getElementById('nomeUsuarioDisplay');
+      if (displayNome && nomeUsuario) {
+        displayNome.textContent = `Usuário: ${nomeUsuario}`;
+      }
+
+      const btnCadastrarNovoServico = document.getElementById('btnCadastrarNovoServico');
+      const secaoFeedServicos = document.getElementById('secaoFeedServicos');
+      const secaoCardsStatus = document.getElementById('secaoCardsStatus');
+      const tituloTabela = document.getElementById('tituloTabelaRecentes');
+      const headersTabela = document.getElementById('headersTabela');
+
+      if (tipoPerfil === 'cliente') {
+        if (secaoFeedServicos) secaoFeedServicos.classList.remove('hidden');
+        if (tituloTabela) tituloTabela.textContent = 'Meus Pedidos Recentes';
+
+        carregarLocalizacaoCliente(token);
+        configurarEventosFiltrosFeed();
+        carregarFeedServicos(token);
+        carregarRecentesCliente(token);
+        
+      } else if (tipoPerfil === 'trabalhador') {
+        if (btnCadastrarNovoServico) btnCadastrarNovoServico.classList.remove('hidden');
+        document.getElementById('linkMeuHorario')?.classList.remove('hidden');
+        
+        // Oculta cards de status
+        if (secaoCardsStatus) secaoCardsStatus.classList.add('hidden');
+        
+        if (tituloTabela) tituloTabela.textContent = 'Meus Serviços Oferecidos';
+        
+        // Ajusta cabeçalho da tabela removendo colunas de cliente e status
+        if (headersTabela) {
+          headersTabela.innerHTML = `
+            <th class="px-4 py-3">ID</th>
+            <th class="px-4 py-3">Serviço Oferecido</th>
+            <th class="px-4 py-3">Valor</th>
+            <th class="px-4 py-3 text-right">Ação</th>
+          `;
+        }
+
+        carregarRecentesTrabalhador(token);
+      }
+
+      carregarNotificacoes(token);
+    });
+
+    function toggleDropdownNotificacoes() {
+      const dropdown = document.getElementById('dropdownNotificacoes');
+      dropdown.classList.toggle('hidden');
+    }
+
+    document.addEventListener('click', (e) => {
+      const btn = document.getElementById('btnNotificacoes');
+      const dropdown = document.getElementById('dropdownNotificacoes');
+      if (btn && dropdown && !btn.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+
+    async function carregarNotificacoes(token) {
+      const container = document.getElementById('containerListaNotificacoes');
+      const badge = document.getElementById('badgeNotificacoes');
+      const txtQtd = document.getElementById('txtQtdNotificacoes');
+
+      try {
+        const response = await fetch('/notificacoes', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          const notificacoes = await response.json();
+
+          if (notificacoes.length > 0) {
+            badge.textContent = notificacoes.length;
+            badge.classList.remove('hidden');
+            txtQtd.textContent = `${notificacoes.length} nova(s)`;
+
+            container.innerHTML = notificacoes.map(n => `
+              <div class="p-3 hover:bg-slate-700/30 transition-colors">
+                <p class="text-xs font-semibold text-slate-200">${n.titulo}</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">${n.mensagem}</p>
+                <span class="text-[9px] text-slate-500 mt-1 block">${n.data_formatada || ''}</span>
+              </div>
+            `).join('');
+            return;
+          }
+        }
+      } catch (err) {}
+
+      badge.classList.add('hidden');
+      txtQtd.textContent = '0 novas';
+      container.innerHTML = `
+        <div class="p-6 text-center text-slate-500 italic text-xs">
+          Nenhuma notificação no momento.
+        </div>
+      `;
+    }
+
+    async function carregarRecentesTrabalhador(token) {
+      const tbody = document.getElementById('bodyTabelaRecentes');
+
+      try {
+        const response = await fetch('/trabalhador/recentes', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          const itens = await response.json();
+          if (itens.length > 0) {
+            tbody.innerHTML = itens.map(item => `
+              <tr class="hover:bg-slate-700/30 transition-colors">
+                <td class="px-4 py-3 font-mono text-xs text-yellow-500">#${item.id}</td>
+                <td class="px-4 py-3 font-semibold text-slate-200">${item.titulo}</td>
+                <td class="px-4 py-3 font-bold text-emerald-400">R$ ${parseFloat(item.preco).toFixed(2)}</td>
+                <td class="px-4 py-3 text-right">
+                  <button onclick="abrirDetalhesServico(${item.id})" class="text-xs bg-slate-700 hover:bg-yellow-600 hover:text-slate-900 text-slate-200 font-bold px-2.5 py-1 rounded transition-colors">
+                    Ver
+                  </button>
+                </td>
+              </tr>
+            `).join('');
+            return;
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" class="px-4 py-8 text-center text-slate-500 italic">
+            Nenhum serviço oferecido encontrado.
+          </td>
+        </tr>
+      `;
+    }
+
+    async function carregarRecentesCliente(token) {
+      const tbody = document.getElementById('bodyTabelaRecentes');
+      try {
+        const res = await fetch('/meus-pedidos', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const pedidos = await res.json();
+
+        const qtdAguardando = pedidos.filter(p => (p.status || '').toUpperCase().includes('AGUARDANDO')).length;
+        const qtdAndamento = pedidos.filter(p => (p.status || '').toUpperCase().includes('ANDAMENTO')).length;
+        const qtdConcluidos = pedidos.filter(p => (p.status || '').toUpperCase().includes('CONCLU')).length;
+
+        document.getElementById('qtdCard1').textContent = qtdAguardando;
+        document.getElementById('qtdCard2').textContent = qtdAndamento;
+        document.getElementById('qtdCard3').textContent = qtdConcluidos;
+
+        const recentes = pedidos.slice(0, 5);
+        if (recentes.length === 0) return;
+
+        tbody.innerHTML = recentes.map(p => `
+          <tr class="hover:bg-slate-700/30 transition-colors">
+            <td class="px-4 py-3 font-mono text-xs text-yellow-500">#${p.id}</td>
+            <td class="px-4 py-3 font-semibold text-slate-200">${escapeHtmlFeed(p.titulo || p.descricao)}</td>
+            <td class="px-4 py-3 text-slate-300">${escapeHtmlFeed(p.nome_trabalhador)}</td>
+            <td class="px-4 py-3 font-bold text-emerald-400">R$ ${parseFloat(p.valor || 0).toFixed(2)}</td>
+            <td class="px-4 py-3 text-xs font-semibold text-yellow-400">${escapeHtmlFeed(p.status)}</td>
+            <td class="px-4 py-3 text-right">
+              <a href="meus-servicos.html" class="text-xs bg-slate-700 hover:bg-yellow-600 hover:text-slate-900 text-slate-200 font-bold px-2.5 py-1 rounded transition-colors">
+                Gerenciar
+              </a>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function gerarEstrelasHTML(nota) {
+      const notaNum = Math.round(nota || 5);
+      let estrelas = '';
+      for (let i = 1; i <= 5; i++) {
+        estrelas += i <= notaNum ? '<span class="text-yellow-400">★</span>' : '<span class="text-slate-600">★</span>';
+      }
+      return estrelas;
+    }
+
+    function escapeHtmlFeed(str) {
+      return String(str || '').replace(/[&<>"']/g, m => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[m]));
+    }
+
+    async function carregarLocalizacaoCliente(token) {
+      const badge = document.getElementById('badgeLocalizacaoFeed');
+      if (!badge) return;
+      try {
+        const res = await fetch('/meu-perfil/localizacao', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error();
+        const loc = await res.json();
+        if (loc.cidade || loc.estado) {
+          badge.textContent = `📍 Sua região: ${[loc.cidade, loc.estado].filter(Boolean).join(' - ')}`;
+        } else if (loc.latitude && loc.longitude) {
+          badge.textContent = `📍 Localização do cadastro ativa`;
+        } else {
+          badge.textContent = `📍 Sem localização salva (use o GPS)`;
+        }
+      } catch (e) {
+        badge.textContent = `📍 Localização não informada`;
+      }
+    }
+
+    function configurarEventosFiltrosFeed() {
+      ['filtroBusca', 'filtroCidade', 'filtroPrecoMax'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              aplicarFiltrosFeed();
+            }
+          });
+        }
+      });
+
+      ['filtroEstado', 'filtroOrdenar', 'filtroRaioKm', 'filtroNotaMin'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', () => aplicarFiltrosFeed());
+      });
+    }
+
+    function usarGPSFeed() {
+      const badge = document.getElementById('badgeLocalizacaoFeed');
+      if (!navigator.geolocation) {
+        alert('Geolocalização não suportada neste navegador.');
+        return;
+      }
+      if (badge) badge.textContent = '📡 Obtendo GPS...';
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          gpsFeedAtual = {
+            lat: pos.coords.latitude.toFixed(7),
+            lon: pos.coords.longitude.toFixed(7)
+          };
+          if (badge) badge.textContent = '📍 GPS ativo (mais próximos primeiro)';
+          const ord = document.getElementById('filtroOrdenar');
+          if (ord) ord.value = 'proximidade';
+          aplicarFiltrosFeed();
+        },
+        () => {
+          if (badge) badge.textContent = '⚠️ Não foi possível obter o GPS';
+          alert('Permissão de localização negada ou indisponível.');
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+
+    function aplicarFiltrosFeed() {
+      const token = localStorage.getItem('token');
+      if (token) carregarFeedServicos(token);
+    }
+
+    function limparFiltrosFeed() {
+      document.getElementById('filtroBusca').value = '';
+      document.getElementById('filtroCidade').value = '';
+      document.getElementById('filtroEstado').value = '';
+      document.getElementById('filtroOrdenar').value = 'proximidade';
+      document.getElementById('filtroRaioKm').value = '';
+      document.getElementById('filtroPrecoMax').value = '';
+      document.getElementById('filtroNotaMin').value = '';
+      aplicarFiltrosFeed();
+    }
+
+    async function carregarFeedServicos(token) {
+      const containerFeed = document.getElementById('containerFeedServicos');
+      const contadorFeed = document.getElementById('contadorFeed');
+
+      const params = new URLSearchParams();
+      const busca = document.getElementById('filtroBusca')?.value.trim();
+      const cidade = document.getElementById('filtroCidade')?.value.trim();
+      const estado = document.getElementById('filtroEstado')?.value;
+      const ordenar = document.getElementById('filtroOrdenar')?.value || 'proximidade';
+      const raioKm = document.getElementById('filtroRaioKm')?.value;
+      const precoMax = document.getElementById('filtroPrecoMax')?.value;
+      const notaMin = document.getElementById('filtroNotaMin')?.value;
+
+      if (busca) params.set('busca', busca);
+      if (cidade) params.set('cidade', cidade);
+      if (estado) params.set('estado', estado);
+      if (ordenar) params.set('ordenar', ordenar);
+      if (raioKm) params.set('raio_km', raioKm);
+      if (precoMax) params.set('preco_max', precoMax);
+      if (notaMin) params.set('nota_min', notaMin);
+      if (gpsFeedAtual) {
+        params.set('lat', gpsFeedAtual.lat);
+        params.set('lon', gpsFeedAtual.lon);
+      }
+
+      try {
+        const response = await fetch(`/servicos-oferecidos?${params.toString()}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error('Falha ao buscar serviços');
+
+        const servicos = await response.json();
+
+        if (contadorFeed) {
+          contadorFeed.textContent = `${servicos.length} serviço(s) encontrado(s)`;
+        }
+
+        if (servicos.length === 0) {
+          containerFeed.innerHTML = `
+            <div class="col-span-full bg-slate-800 border border-slate-700 p-6 rounded-xl text-center text-slate-400 italic">
+              Nenhum serviço encontrado com os filtros selecionados.
+            </div>
+          `;
+          return;
+        }
+
+        containerFeed.innerHTML = servicos.map(s => {
+          const mediaNota = s.media_nota ? parseFloat(s.media_nota) : 5;
+          const localTexto = [s.cidade_trabalhador, s.estado_trabalhador].filter(Boolean).join(' - ');
+          let badgeDistancia = '';
+          if (s.distancia_km !== null && s.distancia_km !== undefined) {
+            badgeDistancia = `<span class="text-[11px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold px-2 py-0.5 rounded">📍 ${s.distancia_km} km</span>`;
+          } else if (s.mesma_cidade) {
+            badgeDistancia = `<span class="text-[11px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold px-2 py-0.5 rounded">📍 Mesma cidade</span>`;
+          }
+
+          return `
+            <div class="bg-slate-800 border border-slate-700/80 rounded-xl p-5 shadow-lg flex flex-col justify-between hover:border-yellow-500/50 transition-all">
+              <div>
+                <div class="flex items-center justify-between gap-2 border-b border-slate-700/60 pb-3 mb-3">
+                  <span class="text-xs bg-yellow-500/10 text-yellow-500 font-semibold px-2.5 py-1 rounded border border-yellow-500/30 truncate">
+                    Profissional: ${escapeHtmlFeed(s.nome_trabalhador)}
+                  </span>
+                  <span class="text-sm font-bold text-emerald-400 whitespace-nowrap">
+                    R$ ${parseFloat(s.preco).toFixed(2)}
+                  </span>
+                </div>
+                
+                <h4 class="text-lg font-bold text-slate-100 mb-1">${escapeHtmlFeed(s.titulo)}</h4>
+
+                ${(localTexto || badgeDistancia) ? `
+                  <div class="flex items-center flex-wrap gap-2 mb-2">
+                    ${badgeDistancia}
+                    ${localTexto ? `<span class="text-xs text-slate-400">${escapeHtmlFeed(localTexto)}</span>` : ''}
+                  </div>
+                ` : ''}
+
+                ${s.descricao ? `<p class="text-xs text-slate-400 line-clamp-2 mb-2">${escapeHtmlFeed(s.descricao)}</p>` : ''}
+
+                <div class="flex items-center gap-1 my-3 text-sm">
+                  ${gerarEstrelasHTML(mediaNota)}
+                  <span class="text-xs text-slate-400 ml-1 font-medium">(${mediaNota.toFixed(1)})</span>
+                </div>
+              </div>
+
+              <button onclick="abrirDetalhesServico(${s.id})" class="w-full bg-yellow-600 hover:bg-yellow-500 text-slate-900 font-bold py-2 px-4 rounded transition-all text-xs uppercase tracking-wider mt-2">
+                Mais Detalhes
+              </button>
+            </div>
+          `;
+        }).join('');
+
+      } catch (error) {
+        console.error(error);
+        if (contadorFeed) contadorFeed.textContent = 'Erro ao carregar';
+        containerFeed.innerHTML = `<div class="col-span-full text-red-400 text-sm">Erro ao carregar lista de serviços.</div>`;
+      }
+    }
+
+    /* ========================================== */
+    /* FUNÇÃO AUXILIAR: FORMATAR NÚMERO WHATSAPP  */
+    /* ========================================== */
+    function formatarTelefoneWhatsApp(telefone) {
+      if (!telefone) return '';
+      // Remove parênteses, traços, espaços e outros caracteres
+      let limpo = telefone.replace(/\D/g, '');
+      // Adiciona o código do país (55 - Brasil) caso não esteja presente
+      if (limpo.length === 10 || limpo.length === 11) {
+        limpo = '55' + limpo;
+      }
+      return limpo;
+    }
+
+    /* ========================================== */
+    /* ABRIR DETALHES DO SERVIÇO                  */
+    /* ========================================== */
+    async function abrirDetalhesServico(idServico) {
+      const token = localStorage.getItem('token');
+      servicoSelecionadoId = idServico;
+
+      try {
+        const response = await fetch(`/servicos-oferecidos/${idServico}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error('Erro ao buscar detalhes');
+
+        const dados = await response.json();
+        servicoAtualModal = dados;
+
+        document.getElementById('modalTrabalhador').textContent = `Profissional: ${dados.nome_trabalhador || 'Profissional'}`;
+        document.getElementById('modalTitulo').textContent = dados.titulo;
+        document.getElementById('modalPreco').textContent = `R$ ${parseFloat(dados.preco).toFixed(2)}`;
+        document.getElementById('modalDescricao').textContent = dados.descricao;
+
+        const tipoPerfil = localStorage.getItem('tipoPerfil');
+        const ehCliente = tipoPerfil === 'cliente';
+
+        // Limpa e configura campos de contratação/agendamento apenas para clientes
+        const containerContratacao = document.getElementById('containerContratacaoCliente');
+        const btnSolicitar = document.getElementById('btnSolicitarContratacaoModal');
+        const txtEsp = document.getElementById('txtEspecificacoes');
+        const inputData = document.getElementById('inputDataServico');
+        const inputHora = document.getElementById('inputHoraServico');
+
+        if (txtEsp) txtEsp.value = '';
+        if (inputData) {
+          inputData.value = '';
+          inputData.min = new Date().toISOString().split('T')[0];
+        }
+        if (inputHora) inputHora.innerHTML = '<option value="">Selecione a data primeiro...</option>';
+
+        if (containerContratacao) containerContratacao.classList.toggle('hidden', !ehCliente);
+        if (btnSolicitar) btnSolicitar.classList.toggle('hidden', !ehCliente);
+
+        // Carrega horários do prestador quando cliente abre o modal
+        window.horariosPrestadorHome = [];
+        const infoEl = document.getElementById('infoHorarioPrestadorHome');
+        if (ehCliente && (dados.id_trabalhador || dados.trabalhador_id)) {
+          try {
+            const resHor = await fetch(`/trabalhador/${dados.id_trabalhador || dados.trabalhador_id}/horario`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (resHor.ok) window.horariosPrestadorHome = await resHor.json();
+          } catch(e) { console.error(e); }
+
+          if (infoEl) {
+            const DIAS_H = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+            if (window.horariosPrestadorHome.length === 0) {
+              infoEl.innerHTML = '<p class="text-red-400 font-semibold">⚠️ Este prestador ainda não configurou horários de atendimento.</p>';
+            } else {
+              const porDia = {};
+              window.horariosPrestadorHome.forEach(h => {
+                if (!porDia[h.dia_semana]) porDia[h.dia_semana] = [];
+                porDia[h.dia_semana].push(`${h.periodo}: ${h.hora_inicio.substring(0,5)}–${h.hora_fim.substring(0,5)}`);
+              });
+              infoEl.innerHTML = `<p class="text-yellow-400 font-bold uppercase tracking-wider text-[11px] mb-1">Horários de Atendimento</p>` +
+                Object.entries(porDia).map(([d, ps]) => `<p class="text-slate-300"><strong class="text-slate-100">${DIAS_H[d]}:</strong> ${ps.join(' | ')}</p>`).join('');
+            }
+            infoEl.classList.remove('hidden');
+          }
+        } else if (infoEl) {
+          infoEl.classList.add('hidden');
+        }
+
+        // Associa o clique do botão apenas para cliente
+        if (btnSolicitar) btnSolicitar.onclick = () => solicitarServico();
+
+        const formAvaliacao = document.getElementById('formNovaAvaliacao');
+        const msgJaAvaliou = document.getElementById('msgJaAvaliou');
+
+        if (!ehCliente) {
+          if (formAvaliacao) formAvaliacao.classList.add('hidden');
+          if (msgJaAvaliou) msgJaAvaliou.classList.add('hidden');
+        } else if (dados.jaAvaliou) {
+          if (formAvaliacao) formAvaliacao.classList.add('hidden');
+          if (msgJaAvaliou) msgJaAvaliou.classList.remove('hidden');
+        } else {
+          if (formAvaliacao) formAvaliacao.classList.remove('hidden');
+          if (msgJaAvaliou) msgJaAvaliou.classList.add('hidden');
+        }
+
+        renderizarComentarios(dados.comentarios || []);
+        document.getElementById('modalDetalhes').classList.remove('hidden');
+
+      } catch (err) {
+        alert('Erro ao carregar detalhes do serviço.');
+        console.error(err);
+      }
+    }
+
+    function fecharModalDetalhes() {
+      document.getElementById('modalDetalhes').classList.add('hidden');
+      servicoSelecionadoId = null;
+      servicoAtualModal = null;
+    }
+
+    function renderizarComentarios(comentarios) {
+      const container = document.getElementById('listaComentarios');
+      if (!comentarios || comentarios.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-500 italic">Nenhum comentário registrado ainda.</p>`;
+        return;
+      }
+
+      container.innerHTML = comentarios.map(c => `
+        <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-700/50 space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-yellow-500">${c.nome_cliente || 'Cliente'}</span>
+            <div class="text-xs flex items-center gap-1">
+              ${gerarEstrelasHTML(c.nota)}
+            </div>
+          </div>
+          <p class="text-xs text-slate-300">${c.comentario}</p>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('formNovaAvaliacao').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const token = localStorage.getItem('token');
+      if (!servicoSelecionadoId) return;
+
+      const nota = parseInt(document.getElementById('selectNotaAvaliacao').value);
+      const comentario = document.getElementById('txtComentarioAvaliacao').value;
+
+      try {
+        const response = await fetch(`/servicos-oferecidos/${servicoSelecionadoId}/avaliar`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ nota, comentario })
+        });
+
+        if (response.ok) {
+          document.getElementById('txtComentarioAvaliacao').value = '';
+          abrirDetalhesServico(servicoSelecionadoId);
+          carregarFeedServicos(token);
+        } else {
+          const errData = await response.json();
+          alert(errData.erro || 'Erro ao publicar avaliação.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Erro de conexão ao enviar avaliação.');
+      }
+    });
+
+    function atualizarSlotsHome() {
+      const dataStr = document.getElementById('inputDataServico')?.value;
+      const selHora = document.getElementById('inputHoraServico');
+      if (!selHora) return;
+      const lista = window.horariosPrestadorHome || [];
+      if (!dataStr) { selHora.innerHTML = '<option value="">Selecione a data primeiro...</option>'; return; }
+      if (lista.length === 0) { selHora.innerHTML = '<option value="">Sem horários disponíveis</option>'; return; }
+
+      const diaSemana = new Date(dataStr + 'T12:00:00').getDay();
+      const periodosDia = lista.filter(h => Number(h.dia_semana) === diaSemana);
+      if (periodosDia.length === 0) {
+        const DIAS_H = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        selHora.innerHTML = `<option value="">Não atende em ${DIAS_H[diaSemana]}</option>`;
+        return;
+      }
+      let opts = '<option value="">Selecione um horário...</option>';
+      periodosDia.forEach(p => {
+        const [ih, im] = p.hora_inicio.split(':').map(Number);
+        const [fh, fm] = p.hora_fim.split(':').map(Number);
+        for (let m = ih * 60 + im; m <= fh * 60 + fm; m += 30) {
+          const val = `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+          opts += `<option value="${val}">${val} (${p.periodo})</option>`;
+        }
+      });
+      selHora.innerHTML = opts;
+    }
+
+    /* ========================================== */
+    /* SOLICITAR CONTRATAÇÃO E ENVIAR PARA WHATSAPP */
+    /* ========================================== */
+    async function solicitarServico() {
+      if (localStorage.getItem('tipoPerfil') !== 'cliente') {
+        alert('Apenas clientes podem contratar serviços.');
+        return;
+      }
+      if (!servicoAtualModal) return;
+
+      const token = localStorage.getItem('token');
+      const especificacoes = document.getElementById('txtEspecificacoes')?.value.trim() || '';
+      const dataAgendamento = document.getElementById('inputDataServico')?.value;
+      const horaAgendamento = document.getElementById('inputHoraServico')?.value;
+
+      if (!dataAgendamento || !horaAgendamento) {
+        alert('Por favor, informe a data e o horário desejados para o agendamento do serviço.');
+        return;
+      }
+
+      const trabalhadorId = servicoAtualModal.id_trabalhador || servicoAtualModal.trabalhador_id;
+      const valorNum = parseFloat(servicoAtualModal.preco || servicoAtualModal.valor);
+
+      if (!trabalhadorId || isNaN(valorNum)) {
+        alert('Erro: Dados do serviço ou profissional incompletos.');
+        return;
+      }
+
+      // 1. Envia a solicitação para salvar o serviço + agendamento no Banco de Dados
+      const payload = {
+        id_trabalhador: Number(trabalhadorId),
+        titulo: servicoAtualModal.titulo,
+        descricao: servicoAtualModal.descricao || '',
+        valor: valorNum,
+        especificacoes: especificacoes,
+        data_agendamento: dataAgendamento,
+        hora_agendamento: horaAgendamento
+      };
+
+      try {
+        const response = await fetch('/servicos', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const resultado = await response.json();
+
+        if (!response.ok) {
+          alert(resultado.erro || 'Erro ao realizar a solicitação de contratação.');
+          return;
+        }
+
+        carregarRecentesCliente(token);
+
+        // 2. Prepara a mensagem para o WhatsApp
+        const telefoneTrabalhador = formatarTelefoneWhatsApp(servicoAtualModal.telefone_trabalhador);
+        const [ano, mes, dia] = dataAgendamento.split('-');
+
+        let mensagemWhatsApp = `Olá, *${servicoAtualModal.nome_trabalhador || 'Profissional'}*!\n\n`;
+        mensagemWhatsApp += `Gostaria de contratar o seu serviço: *${servicoAtualModal.titulo}*\n`;
+        mensagemWhatsApp += `📅 *Data:* ${dia}/${mes}/${ano} às ${horaAgendamento}\n`;
+        mensagemWhatsApp += `💰 *Valor:* R$ ${valorNum.toFixed(2)}\n`;
+
+        if (especificacoes) {
+          mensagemWhatsApp += `\n📝 *Especificações / Detalhes adicionais:*\n${especificacoes}\n`;
+        }
+
+        mensagemWhatsApp += `\nAguardo seu retorno para combinarmos a execução e a forma de pagamento!`;
+
+        fecharModalDetalhes();
+
+        // 3. Redireciona para o WhatsApp se o telefone existir
+        if (telefoneTrabalhador) {
+          const urlWhatsApp = `https://api.whatsapp.com/send?phone=${telefoneTrabalhador}&text=${encodeURIComponent(mensagemWhatsApp)}`;
+          window.open(urlWhatsApp, '_blank');
+        } else {
+          alert('Solicitação realizada no sistema! (O profissional não possui telefone cadastrado para redirecionamento direto).');
+        }
+
+      } catch (err) {
+        console.error('Erro na requisição de contratação:', err);
+        alert('Erro de conexão com o servidor.');
+      }
+    }
+
+    document.getElementById('btnLogout').addEventListener('click', () => {
+      if (confirm('Deseja realmente sair do sistema?')) {
+        localStorage.clear();
+        window.location.href = 'index.html';
+      }
+    });
+  </script>
+</body>
+</html>

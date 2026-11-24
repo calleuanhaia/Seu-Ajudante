@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendário de Agendamentos - Projeto Serviços</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-200 font-sans h-screen flex flex-col md:flex-row overflow-hidden">
+
+  <!-- ========================================== -->
+  <!-- 1. MENU LATERAL (SIDEBAR FIXA)             -->
+  <!-- ========================================== -->
+  <aside class="w-full md:w-64 flex-shrink-0 h-full bg-slate-800 border-r border-slate-700/60 flex flex-col justify-between p-4 relative z-30">
+    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-yellow-400 to-yellow-600"></div>
+
+    <div>
+      <!-- LOGO / TITULO -->
+      <div class="flex items-center gap-3 py-4 border-b border-slate-700/60 mb-6">
+        <div class="w-10 h-10 rounded-lg bg-yellow-600 text-slate-900 font-bold flex items-center justify-center text-xl shadow-lg">PS</div>
+        <div>
+          <h1 class="font-bold text-slate-100 leading-tight">ProjetoServiços</h1>
+          <p id="nomeUsuarioDisplay" class="text-sm text-slate-200 mt-1 mb-1"></p>
+          <span id="badgeTipoPerfil" class="text-xs text-yellow-500 font-semibold uppercase tracking-wider">Carregando...</span>
+        </div>
+      </div>
+
+      <!-- LINKS DO MENU -->
+      <nav class="space-y-1">
+        <a href="home.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-700/50 rounded-lg font-medium transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 00-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 00-1 1m-6 0h6"/></svg>
+          Início / Painel
+        </a>
+
+        <a href="meus-servicos.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-700/50 rounded-lg font-medium transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          Meus Serviços
+        </a>
+
+        <!-- CALENDÁRIO (ATIVO) -->
+        <a href="calendario.html" class="flex items-center gap-3 px-4 py-3 text-yellow-500 bg-slate-900/60 rounded-lg font-medium border-l-4 border-yellow-500 transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          Calendário
+        </a>
+
+        <a id="btnCadastrarNovoServico" href="cadastrar-servico.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-700/50 rounded-lg font-medium transition-all hidden">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          + Cadastrar Meu Serviço
+        </a>
+
+        <a id="linkMeuHorario" href="meu-horario.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-700/50 rounded-lg font-medium transition-all hidden">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Meus Horários
+        </a>
+      </nav>
+    </div>
+
+    <!-- BOTÃO LOGOUT -->
+    <div class="pt-6 border-t border-slate-700/60 mt-6">
+      <button id="btnLogout" class="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-red-950/40 text-red-400 hover:text-red-300 border border-slate-700 hover:border-red-800 font-semibold py-2 px-4 rounded-lg transition-all text-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        Sair da Conta
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========================================== -->
+  <!-- 2. ÁREA PRINCIPAL                          -->
+  <!-- ========================================== -->
+  <main class="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
+
+    <!-- HEADER -->
+    <header class="flex-shrink-0 bg-slate-800 border-b border-slate-700/60 p-4 px-6 flex items-center justify-between relative z-20">
+      <div>
+        <h2 class="text-xl font-bold text-slate-100">Calendário de Agendamentos</h2>
+        <p class="text-xs text-slate-400">Visualize e agende seus serviços por data e hora</p>
+      </div>
+      <!-- Botão novo agendamento (apenas clientes) -->
+      <button id="btnNovoAgendamento" onclick="abrirModalAgendar()" class="hidden items-center gap-2 bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold py-2 px-4 rounded-lg transition-all text-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Novo Agendamento
+      </button>
+    </header>
+
+    <!-- CONTEÚDO SCROLLÁVEL -->
+    <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+
+      <!-- ========= CONTROLES DO CALENDÁRIO ========= -->
+      <div class="bg-slate-800 rounded-xl border border-slate-700/60 p-4">
+        <div class="flex items-center justify-between mb-4">
+          <button onclick="mudarMes(-1)" class="p-2 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-yellow-400 transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <h3 id="mesAnoTitulo" class="text-lg font-bold text-slate-100 capitalize"></h3>
+          <button onclick="mudarMes(1)" class="p-2 rounded-lg hover:bg-slate-700 text-slate-300 hover:text-yellow-400 transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+
+        <!-- DIAS DA SEMANA -->
+        <div class="grid grid-cols-7 mb-2">
+          <div class="text-center text-xs font-bold text-red-400 py-2">Dom</div>
+          <div class="text-center text-xs font-bold text-slate-400 py-2">Seg</div>
+          <div class="text-center text-xs font-bold text-slate-400 py-2">Ter</div>
+          <div class="text-center text-xs font-bold text-slate-400 py-2">Qua</div>
+          <div class="text-center text-xs font-bold text-slate-400 py-2">Qui</div>
+          <div class="text-center text-xs font-bold text-slate-400 py-2">Sex</div>
+          <div class="text-center text-xs font-bold text-red-400 py-2">Sáb</div>
+        </div>
+
+        <!-- GRADE DOS DIAS -->
+        <div id="gradeCalendario" class="grid grid-cols-7 gap-1"></div>
+      </div>
+
+      <!-- ========= AGENDAMENTOS DO DIA SELECIONADO ========= -->
+      <div id="painelDia" class="bg-slate-800 rounded-xl border border-slate-700/60 p-5 hidden">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 id="tituloDiaSelecionado" class="text-base font-bold text-slate-100"></h3>
+            <p class="text-xs text-slate-400 mt-0.5">Agendamentos para este dia</p>
+          </div>
+          <button id="btnAgendarNoDia" onclick="abrirModalAgendar()" class="hidden items-center gap-1 text-xs bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold py-1.5 px-3 rounded-lg transition-all">
+            <svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Agendar
+          </button>
+        </div>
+        <div id="listaAgendamentosDia" class="space-y-3">
+          <p class="text-sm text-slate-500 text-center py-6">Nenhum agendamento neste dia.</p>
+        </div>
+      </div>
+
+      <!-- ========= PRÓXIMOS AGENDAMENTOS ========= -->
+      <div class="bg-slate-800 rounded-xl border border-slate-700/60 p-5">
+        <h3 class="text-base font-bold text-slate-100 mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Próximos Agendamentos
+        </h3>
+        <div id="listaProximos" class="space-y-3">
+          <p class="text-sm text-slate-500 text-center py-4">Carregando...</p>
+        </div>
+      </div>
+
+    </div><!-- /conteúdo scrollável -->
+  </main>
+
+  <!-- ============================================= -->
+  <!-- MODAL: NOVO AGENDAMENTO                       -->
+  <!-- ============================================= -->
+  <div id="modalAgendar" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden p-4">
+    <div class="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-md shadow-2xl">
+      <div class="flex items-center justify-between p-5 border-b border-slate-700">
+        <h3 class="text-lg font-bold text-slate-100">Agendar Serviço</h3>
+        <button onclick="fecharModalAgendar()" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <form id="formAgendar" onsubmit="salvarAgendamento(event)" class="p-5 space-y-4">
+        <!-- Serviço -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Serviço</label>
+          <select id="selectServico" onchange="aoMudarServicoAgend(this.value)" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500 transition-all text-sm" required>
+            <option value="">Selecione um serviço ativo...</option>
+          </select>
+        </div>
+
+        <!-- Info de horários do prestador -->
+        <div id="infoHorarioTrabalhador" class="hidden text-xs bg-slate-900/80 border border-slate-700 rounded-lg p-3 space-y-1"></div>
+
+        <!-- Data -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Data</label>
+          <input id="inputDataAgend" type="date" onchange="atualizarHorariosDisponiveis()" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500 transition-all text-sm" required>
+        </div>
+
+        <!-- Hora -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Horário</label>
+          <select id="inputHoraAgend" class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500 transition-all text-sm" required>
+            <option value="">Selecione o serviço e a data primeiro...</option>
+          </select>
+        </div>
+
+        <!-- Observação -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 mb-1 uppercase tracking-wider">Observação (opcional)</label>
+          <textarea id="inputObsAgend" rows="2" placeholder="Informe detalhes adicionais..." class="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2.5 text-slate-100 focus:outline-none focus:border-yellow-500 transition-all text-sm resize-none"></textarea>
+        </div>
+
+        <div id="erroModalAgendar" class="hidden text-sm text-red-400 bg-red-950/30 border border-red-800/40 rounded-lg px-3 py-2"></div>
+
+        <div class="flex gap-3 pt-2">
+          <button type="button" onclick="fecharModalAgendar()" class="flex-1 py-2.5 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-700 font-semibold text-sm transition-all">Cancelar</button>
+          <button type="submit" class="flex-1 py-2.5 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-bold text-sm transition-all">Confirmar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================= -->
+  <!-- MODAL: DETALHE / CANCELAR AGENDAMENTO         -->
+  <!-- ============================================= -->
+  <div id="modalDetalheAgend" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden p-4">
+    <div class="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-sm shadow-2xl">
+      <div class="flex items-center justify-between p-5 border-b border-slate-700">
+        <h3 class="text-lg font-bold text-slate-100">Detalhes do Agendamento</h3>
+        <button onclick="fecharModalDetalhe()" class="p-1.5 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-slate-100 transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="conteudoDetalheAgend" class="p-5 space-y-3 text-sm text-slate-300"></div>
+      <div id="acoesDetalheAgend" class="p-5 pt-0 flex gap-3">
+        <button onclick="fecharModalDetalhe()" class="flex-1 py-2.5 rounded-lg border border-slate-600 text-slate-300 hover:bg-slate-700 font-semibold text-sm transition-all">Fechar</button>
+        <button id="btnCancelarAgend" onclick="cancelarAgendamento()" class="flex-1 py-2.5 rounded-lg bg-red-700 hover:bg-red-600 text-white font-bold text-sm transition-all hidden">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =============================================
+    // ESTADO GLOBAL
+    // =============================================
+    const token = localStorage.getItem('token');
+    const tipoPerfil = localStorage.getItem('tipoPerfil');
+    const nomeUsuario = localStorage.getItem('nomeUsuario') || '';
+    let agendamentoAtual = null;
+
+    // Data de navegação do calendário
+    let anoAtual = new Date().getFullYear();
+    let mesAtual = new Date().getMonth(); // 0-11
+    let diaSelecionado = null;
+    let agendamentos = []; // cache de todos os agendamentos do mês
+    let servicosAtivosCache = [];
+    let horariosTrabalhadorAtual = [];
+    const DIAS_NOMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+    // =============================================
+    // INICIALIZAÇÃO
+    // =============================================
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!token) { window.location.href = 'index.html'; return; }
+
+      // Preenche sidebar
+      document.getElementById('nomeUsuarioDisplay').textContent = nomeUsuario;
+      document.getElementById('badgeTipoPerfil').textContent = tipoPerfil === 'cliente' ? 'Cliente' : 'Trabalhador';
+
+      // Visibilidade de itens por perfil
+      if (tipoPerfil === 'cliente') {
+        document.getElementById('btnNovoAgendamento').classList.remove('hidden');
+        document.getElementById('btnNovoAgendamento').classList.add('flex');
+        document.getElementById('btnAgendarNoDia').classList.remove('hidden');
+        document.getElementById('btnAgendarNoDia').classList.add('inline-flex');
+      } else {
+        document.getElementById('btnCadastrarNovoServico').classList.remove('hidden');
+        document.getElementById('linkMeuHorario').classList.remove('hidden');
+      }
+
+      renderizarCalendario();
+      await carregarAgendamentos();
+      await carregarProximos();
+      if (tipoPerfil === 'cliente') {
+        await carregarServicosAtivos();
+        const servicoParam = new URLSearchParams(window.location.search).get('servico');
+        if (servicoParam) {
+          abrirModalAgendar();
+          const sel = document.getElementById('selectServico');
+          if (sel) {
+            sel.value = servicoParam;
+            await aoMudarServicoAgend(servicoParam);
+          }
+        }
+      }
+    });
+
+    // =============================================
+    // CALENDÁRIO
+    // =============================================
+    const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+    function renderizarCalendario() {
+      document.getElementById('mesAnoTitulo').textContent = `${MESES[mesAtual]} de ${anoAtual}`;
+      const grade = document.getElementById('gradeCalendario');
+      grade.innerHTML = '';
+
+      const primeiroDia = new Date(anoAtual, mesAtual, 1).getDay(); // 0=dom
+      const totalDias = new Date(anoAtual, mesAtual + 1, 0).getDate();
+      const hoje = new Date();
+
+      // Células vazias antes do primeiro dia
+      for (let i = 0; i < primeiroDia; i++) {
+        grade.innerHTML += `<div class="h-10 md:h-14"></div>`;
+      }
+
+      for (let d = 1; d <= totalDias; d++) {
+        const dataStr = `${anoAtual}-${String(mesAtual+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const ehHoje = hoje.getFullYear() === anoAtual && hoje.getMonth() === mesAtual && hoje.getDate() === d;
+        const ehSelecionado = diaSelecionado === dataStr;
+        const qtdAgend = agendamentos.filter(a => a.data_agendamento && a.data_agendamento.startsWith(dataStr)).length;
+
+        let classeBase = 'h-10 md:h-14 rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all text-sm font-semibold relative select-none ';
+        if (ehSelecionado) classeBase += 'bg-yellow-500 text-slate-900 shadow-lg';
+        else if (ehHoje) classeBase += 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 hover:bg-yellow-500/30';
+        else classeBase += 'text-slate-300 hover:bg-slate-700';
+
+        const pontinho = qtdAgend > 0
+          ? `<span class="absolute bottom-1 w-1.5 h-1.5 rounded-full ${ehSelecionado ? 'bg-slate-900' : 'bg-yellow-500'}"></span>`
+          : '';
+
+        grade.innerHTML += `
+          <div class="${classeBase}" onclick="selecionarDia('${dataStr}')">
+            ${d}
+            ${pontinho}
+          </div>`;
+      }
+    }
+
+    async function mudarMes(delta) {
+      mesAtual += delta;
+      if (mesAtual < 0) { mesAtual = 11; anoAtual--; }
+      if (mesAtual > 11) { mesAtual = 0; anoAtual++; }
+      diaSelecionado = null;
+      document.getElementById('painelDia').classList.add('hidden');
+      await carregarAgendamentos();
+      renderizarCalendario();
+    }
+
+    function selecionarDia(dataStr) {
+      diaSelecionado = dataStr;
+      renderizarCalendario();
+      mostrarAgendamentosDia(dataStr);
+      // Preenche a data no modal
+      document.getElementById('inputDataAgend').value = dataStr;
+    }
+
+    function mostrarAgendamentosDia(dataStr) {
+      const painel = document.getElementById('painelDia');
+      const titulo = document.getElementById('tituloDiaSelecionado');
+      const lista = document.getElementById('listaAgendamentosDia');
+      painel.classList.remove('hidden');
+
+      const [a, m, d] = dataStr.split('-');
+      titulo.textContent = `${Number(d)} de ${MESES[Number(m)-1]} de ${a}`;
+
+      const dodia = agendamentos.filter(ag => ag.data_agendamento && ag.data_agendamento.startsWith(dataStr));
+
+      if (dodia.length === 0) {
+        lista.innerHTML = '<p class="text-sm text-slate-500 text-center py-6">Nenhum agendamento neste dia.</p>';
+        return;
+      }
+
+      lista.innerHTML = dodia.map(ag => cardAgendamento(ag)).join('');
+    }
+
+    // =============================================
+    // DADOS DO SERVIDOR
+    // =============================================
+    async function carregarAgendamentos() {
+      try {
+        const res = await fetch(`/agendamentos?ano=${anoAtual}&mes=${mesAtual+1}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          agendamentos = await res.json();
+        }
+      } catch(e) {
+        console.error('Erro ao carregar agendamentos:', e);
+      }
+    }
+
+    async function carregarProximos() {
+      const lista = document.getElementById('listaProximos');
+      try {
+        const res = await fetch('/agendamentos/proximos', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const proximos = await res.json();
+          if (proximos.length === 0) {
+            lista.innerHTML = '<p class="text-sm text-slate-500 text-center py-4">Nenhum agendamento futuro.</p>';
+          } else {
+            lista.innerHTML = proximos.map(ag => cardAgendamento(ag)).join('');
+          }
+        } else {
+          lista.innerHTML = '<p class="text-sm text-red-400 text-center py-4">Erro ao carregar agendamentos.</p>';
+        }
+      } catch(e) {
+        lista.innerHTML = '<p class="text-sm text-red-400 text-center py-4">Erro de conexão.</p>';
+      }
+    }
+
+    async function carregarServicosAtivos() {
+      try {
+        const res = await fetch('/meus-pedidos', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const servicos = await res.json();
+        const ativos = servicos.filter(s => !['CONCLUÍDO','CANCELADO','CONCLUIDO'].includes((s.status||'').toUpperCase()));
+        servicosAtivosCache = ativos;
+        const sel = document.getElementById('selectServico');
+        ativos.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.id;
+          opt.textContent = `#${s.id} – ${s.descricao || s.titulo || 'Serviço'} (R$ ${parseFloat(s.valor||0).toFixed(2)})`;
+          sel.appendChild(opt);
+        });
+      } catch(e) { console.error(e); }
+    }
+
+    async function aoMudarServicoAgend(idServico) {
+      const infoEl = document.getElementById('infoHorarioTrabalhador');
+      const selHora = document.getElementById('inputHoraAgend');
+      horariosTrabalhadorAtual = [];
+
+      if (!idServico) {
+        infoEl.classList.add('hidden');
+        selHora.innerHTML = '<option value="">Selecione o serviço e a data primeiro...</option>';
+        return;
+      }
+
+      const servico = servicosAtivosCache.find(s => String(s.id) === String(idServico));
+      if (!servico || !servico.id_trabalhador) {
+        infoEl.classList.add('hidden');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/trabalhador/${servico.id_trabalhador}/horario`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          horariosTrabalhadorAtual = await res.json();
+        }
+      } catch(e) { console.error(e); }
+
+      if (horariosTrabalhadorAtual.length === 0) {
+        infoEl.innerHTML = '<p class="text-red-400 font-semibold">⚠️ Este prestador ainda não configurou seus horários de atendimento.</p>';
+        infoEl.classList.remove('hidden');
+      } else {
+        const porDia = {};
+        horariosTrabalhadorAtual.forEach(h => {
+          if (!porDia[h.dia_semana]) porDia[h.dia_semana] = [];
+          porDia[h.dia_semana].push(`${h.periodo}: ${h.hora_inicio.substring(0,5)}–${h.hora_fim.substring(0,5)}`);
+        });
+        infoEl.innerHTML = `
+          <p class="text-yellow-400 font-bold uppercase tracking-wider text-[11px] mb-1">Horários do Prestador</p>
+          ${Object.entries(porDia).map(([d, ps]) => `<p class="text-slate-300"><strong class="text-slate-100">${DIAS_NOMES[d]}:</strong> ${ps.join(' | ')}</p>`).join('')}
+        `;
+        infoEl.classList.remove('hidden');
+      }
+
+      atualizarHorariosDisponiveis();
+    }
+
+    function atualizarHorariosDisponiveis() {
+      const dataStr = document.getElementById('inputDataAgend').value;
+      const selHora = document.getElementById('inputHoraAgend');
+      const erroEl = document.getElementById('erroModalAgendar');
+      erroEl.classList.add('hidden');
+
+      if (!dataStr) {
+        selHora.innerHTML = '<option value="">Selecione uma data...</option>';
+        return;
+      }
+
+      if (horariosTrabalhadorAtual.length === 0) {
+        selHora.innerHTML = '<option value="">Sem horários disponíveis</option>';
+        return;
+      }
+
+      const diaSemana = new Date(dataStr + 'T12:00:00').getDay();
+      const periodosDia = horariosTrabalhadorAtual.filter(h => Number(h.dia_semana) === diaSemana);
+
+      if (periodosDia.length === 0) {
+        selHora.innerHTML = '<option value="">Prestador não atende neste dia</option>';
+        erroEl.textContent = `O prestador não trabalha em ${DIAS_NOMES[diaSemana]}. Escolha outro dia.`;
+        erroEl.classList.remove('hidden');
+        return;
+      }
+
+      let options = '<option value="">Selecione um horário...</option>';
+      periodosDia.forEach(p => {
+        const [ih, im] = p.hora_inicio.split(':').map(Number);
+        const [fh, fm] = p.hora_fim.split(':').map(Number);
+        const startMin = ih * 60 + im;
+        const endMin = fh * 60 + fm;
+
+        for (let m = startMin; m <= endMin; m += 30) {
+          const hh = String(Math.floor(m / 60)).padStart(2, '0');
+          const mm = String(m % 60).padStart(2, '0');
+          const timeVal = `${hh}:${mm}`;
+          options += `<option value="${timeVal}">${timeVal} (${p.periodo})</option>`;
+        }
+      });
+
+      selHora.innerHTML = options;
+    }
+
+    // =============================================
+    // CARD DE AGENDAMENTO
+    // =============================================
+    function cardAgendamento(ag) {
+      const hora = ag.hora_agendamento ? ag.hora_agendamento.substring(0,5) : '--:--';
+      const statusCor = {
+        'confirmado': 'text-green-400 bg-green-950/40 border-green-800/40',
+        'pendente':   'text-yellow-400 bg-yellow-950/40 border-yellow-800/40',
+        'cancelado':  'text-red-400 bg-red-950/40 border-red-800/40',
+      }[ag.status_agendamento] || 'text-slate-400 bg-slate-700/40 border-slate-600/40';
+
+      return `
+        <div class="flex items-start gap-3 p-3 bg-slate-900/50 rounded-xl border border-slate-700/60 cursor-pointer hover:border-yellow-500/40 transition-all"
+             onclick='verDetalhe(${JSON.stringify(ag)})'>
+          <div class="flex-shrink-0 w-14 text-center bg-slate-800 rounded-lg p-2 border border-slate-700">
+            <span class="block text-lg font-black text-yellow-400 leading-none">${hora}</span>
+            <span class="block text-[10px] text-slate-500 mt-0.5">hr</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-slate-100 text-sm truncate">${escapeHtml(ag.descricao || ag.titulo || 'Serviço #'+ag.id_servico)}</p>
+            <p class="text-xs text-slate-400 mt-0.5">${escapeHtml(ag.nome_outro || '')}</p>
+            ${ag.observacao ? `<p class="text-xs text-slate-500 mt-1 truncate italic">"${escapeHtml(ag.observacao)}"</p>` : ''}
+          </div>
+          <span class="flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full border ${statusCor}">${ag.status_agendamento || 'pendente'}</span>
+        </div>`;
+    }
+
+    function escapeHtml(str) {
+      return String(str||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    // =============================================
+    // MODAL: NOVO AGENDAMENTO
+    // =============================================
+    function abrirModalAgendar() {
+      document.getElementById('erroModalAgendar').classList.add('hidden');
+      document.getElementById('infoHorarioTrabalhador').classList.add('hidden');
+      document.getElementById('formAgendar').reset();
+      document.getElementById('inputHoraAgend').innerHTML = '<option value="">Selecione o serviço e a data primeiro...</option>';
+      if (diaSelecionado) document.getElementById('inputDataAgend').value = diaSelecionado;
+      // Data mínima: hoje
+      document.getElementById('inputDataAgend').min = new Date().toISOString().split('T')[0];
+      document.getElementById('modalAgendar').classList.remove('hidden');
+    }
+
+    function fecharModalAgendar() {
+      document.getElementById('modalAgendar').classList.add('hidden');
+    }
+
+    async function salvarAgendamento(e) {
+      e.preventDefault();
+      const erroEl = document.getElementById('erroModalAgendar');
+      erroEl.classList.add('hidden');
+
+      const id_servico = document.getElementById('selectServico').value;
+      const data = document.getElementById('inputDataAgend').value;
+      const hora = document.getElementById('inputHoraAgend').value;
+      const obs = document.getElementById('inputObsAgend').value;
+
+      if (!id_servico) { erroEl.textContent = 'Selecione um serviço.'; erroEl.classList.remove('hidden'); return; }
+
+      try {
+        const res = await fetch('/agendamentos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ id_servico, data_agendamento: data, hora_agendamento: hora, observacao: obs })
+        });
+        const data_resp = await res.json();
+        if (!res.ok) { erroEl.textContent = data_resp.erro || 'Erro ao salvar.'; erroEl.classList.remove('hidden'); return; }
+        fecharModalAgendar();
+        await carregarAgendamentos();
+        renderizarCalendario();
+        if (diaSelecionado) mostrarAgendamentosDia(diaSelecionado);
+        await carregarProximos();
+      } catch(err) {
+        erroEl.textContent = 'Erro de conexão.'; erroEl.classList.remove('hidden');
+      }
+    }
+
+    // =============================================
+    // MODAL: DETALHE
+    // =============================================
+    function verDetalhe(ag) {
+      agendamentoAtual = ag;
+      const hora = ag.hora_agendamento ? ag.hora_agendamento.substring(0,5) : '--';
+      const [a,m,d] = (ag.data_agendamento||'').split('T')[0].split('-');
+      const dataFmt = `${Number(d)} de ${MESES[Number(m)-1]} de ${a}`;
+
+      const statusCor = { confirmado:'text-green-400', pendente:'text-yellow-400', cancelado:'text-red-400' }[ag.status_agendamento] || 'text-slate-400';
+
+      document.getElementById('conteudoDetalheAgend').innerHTML = `
+        <div class="flex gap-3 items-center mb-2">
+          <div class="w-12 h-12 bg-yellow-500/20 border border-yellow-500/30 rounded-xl flex items-center justify-center">
+            <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          </div>
+          <div>
+            <p class="font-bold text-slate-100">${escapeHtml(ag.descricao || ag.titulo || 'Serviço #'+ag.id_servico)}</p>
+            <p class="text-xs ${statusCor} capitalize font-semibold">${ag.status_agendamento || 'pendente'}</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <div class="bg-slate-900/50 rounded-lg p-2.5">
+            <p class="text-xs text-slate-500 mb-0.5">Data</p>
+            <p class="font-semibold text-slate-100">${dataFmt}</p>
+          </div>
+          <div class="bg-slate-900/50 rounded-lg p-2.5">
+            <p class="text-xs text-slate-500 mb-0.5">Horário</p>
+            <p class="font-semibold text-slate-100">${hora}</p>
+          </div>
+        </div>
+        ${ag.nome_outro ? `<div class="bg-slate-900/50 rounded-lg p-2.5 text-sm"><p class="text-xs text-slate-500 mb-0.5">${tipoPerfil === 'cliente' ? 'Profissional' : 'Cliente'}</p><p class="font-semibold text-slate-100">${escapeHtml(ag.nome_outro)}</p></div>` : ''}
+        ${ag.observacao ? `<div class="bg-slate-900/50 rounded-lg p-2.5 text-sm"><p class="text-xs text-slate-500 mb-0.5">Observação</p><p class="text-slate-300 italic">"${escapeHtml(ag.observacao)}"</p></div>` : ''}
+      `;
+
+      const btnCancelar = document.getElementById('btnCancelarAgend');
+      if (ag.status_agendamento !== 'cancelado') {
+        btnCancelar.classList.remove('hidden');
+      } else {
+        btnCancelar.classList.add('hidden');
+      }
+
+      document.getElementById('modalDetalheAgend').classList.remove('hidden');
+    }
+
+    function fecharModalDetalhe() {
+      document.getElementById('modalDetalheAgend').classList.add('hidden');
+      agendamentoAtual = null;
+    }
+
+    async function cancelarAgendamento() {
+      if (!agendamentoAtual) return;
+      if (!confirm('Deseja cancelar este agendamento?')) return;
+      try {
+        const res = await fetch(`/agendamentos/${agendamentoAtual.id}/cancelar`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          fecharModalDetalhe();
+          await carregarAgendamentos();
+          renderizarCalendario();
+          if (diaSelecionado) mostrarAgendamentosDia(diaSelecionado);
+          await carregarProximos();
+        } else {
+          const err = await res.json();
+          alert(err.erro || 'Erro ao cancelar.');
+        }
+      } catch(e) { alert('Erro de conexão.'); }
+    }
+
+    // =============================================
+    // LOGOUT
+    // =============================================
+    document.getElementById('btnLogout').addEventListener('click', () => {
+      if (confirm('Deseja realmente sair da conta?')) {
+        localStorage.clear();
+        window.location.href = 'index.html';
+      }
+    });
+  </script>
+</body>
+</html>
