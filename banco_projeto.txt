@@ -1,0 +1,79 @@
+CREATE DATABASE projetoservicos;
+USE projetoservicos;
+
+select * from clientes;
+select * from trabalhadores;
+select * from servicos;
+select * from servicos_oferecidos;
+select * from avaliacoes_servicos;
+
+ALTER TABLE servicos 
+ADD COLUMN id_servico_oferecido INT NULL,
+ADD FOREIGN KEY (id_servico_oferecido) REFERENCES servicos_oferecidos(id) ON DELETE SET NULL;
+
+CREATE TABLE IF NOT EXISTS notificacoes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  id_usuario INT NOT NULL,
+  tipo_usuario ENUM('cliente', 'trabalhador') NOT NULL,
+  titulo VARCHAR(255) NOT NULL,
+  mensagem TEXT NOT NULL,
+  data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE servicos 
+ADD COLUMN motivo_cancelamento TEXT NULL,
+ADD COLUMN cancelado_por VARCHAR(50) NULL;
+
+CREATE TABLE IF NOT EXISTS avaliacoes_servicos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  id_servico INT NOT NULL,
+  id_cliente INT NOT NULL,
+  nota INT NOT NULL CHECK (nota >= 1 AND nota <= 5),
+  comentario TEXT,
+  data_avaliacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (id_servico) REFERENCES servicos_oferecidos(id) ON DELETE CASCADE,
+  FOREIGN KEY (id_cliente) REFERENCES clientes(id) ON DELETE CASCADE
+);
+
+CREATE TABLE clientes (
+	id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    usuario VARCHAR (255),
+    email VARCHAR (255) UNIQUE,
+    telefone VARCHAR(255) UNIQUE,
+    senha VARCHAR (255),
+    cpf VARCHAR (11) UNIQUE,
+    status VARCHAR(255) DEFAULT "OFFLINE"
+);
+
+CREATE TABLE servicos (
+	id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    id_cliente INT NOT NULL,
+    id_trabalhador INT NOT NULL,
+    descricao VARCHAR(255),
+    valor DECIMAL(10,2),
+    data_pedido DATE,
+    data_finalizado DATE,
+    status VARCHAR(255) DEFAULT "AGUARDANDO APROVAÇÃO",
+    FOREIGN KEY (id_cliente) REFERENCES clientes(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_trabalhador) REFERENCES trabalhadores(id) ON DELETE CASCADE
+);
+
+CREATE TABLE servicos_oferecidos (
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    id_trabalhador INT NOT NULL,
+    titulo VARCHAR(255) NOT NULL,
+    descricao TEXT,
+    preco DECIMAL(10,2) NOT NULL,
+    data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_trabalhador) REFERENCES trabalhadores(id) ON DELETE CASCADE
+);
+
+CREATE TABLE trabalhadores (
+	id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    usuario VARCHAR (255),
+    email VARCHAR (255) UNIQUE,
+    telefone VARCHAR(255) UNIQUE,
+    senha VARCHAR (255),
+    cpf VARCHAR (11) UNIQUE,
+    status VARCHAR(255) DEFAULT "OFFLINE"
+);
