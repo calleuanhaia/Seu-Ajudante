@@ -110,6 +110,9 @@
 
         <!-- GRADE DOS DIAS -->
         <div id="gradeCalendario" class="grid grid-cols-7 gap-1"></div>
+
+        <!-- LEGENDA -->
+        <div id="legendaCalendario" class="flex flex-wrap gap-3 mt-3 pt-3 border-t border-slate-700/60 text-xs text-slate-400"></div>
       </div>
 
       <!-- ========= AGENDAMENTOS DO DIA SELECIONADO ========= -->
@@ -232,6 +235,8 @@
     let agendamentos = []; // cache de todos os agendamentos do mês
     let servicosAtivosCache = [];
     let horariosTrabalhadorAtual = [];
+    // Conjunto de dias da semana disponíveis para realce no calendário (Set de números 0-6)
+    let diasTrabalhoDestaque = new Set(); // usado pelo trabalhador ou pelo cliente ao selecionar serviço
     const DIAS_NOMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
     // =============================================
@@ -255,9 +260,14 @@
         document.getElementById('linkMeuHorario').classList.remove('hidden');
       }
 
+      if (tipoPerfil === 'trabalhador') {
+        await carregarDiasTrabalhoCalendario();
+      }
+
       renderizarCalendario();
       await carregarAgendamentos();
       await carregarProximos();
+
       if (tipoPerfil === 'cliente') {
         await carregarServicosAtivos();
         const servicoParam = new URLSearchParams(window.location.search).get('servico');
@@ -277,6 +287,23 @@
     // =============================================
     const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
+    // Legenda visual do calendário (atualizada dinamicamente)
+    function atualizarLegenda() {
+      const legEl = document.getElementById('legendaCalendario');
+      if (!legEl) return;
+      let itens = [
+        `<span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-yellow-500 inline-block"></span> Hoje</span>`,
+        `<span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded border-2 border-blue-400 bg-blue-400/10 inline-block"></span> Com agendamento</span>`,
+      ];
+      if (tipoPerfil === 'trabalhador') {
+        itens.push(`<span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-green-500/30 border border-green-500/50 inline-block"></span> Dias de trabalho</span>`);
+      } else if (horariosTrabalhadorAtual.length > 0) {
+        itens.push(`<span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-green-500/30 border border-green-500/50 inline-block"></span> Disponível</span>`);
+        itens.push(`<span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-red-900/40 border border-red-700/40 inline-block"></span> Indisponível</span>`);
+      }
+      legEl.innerHTML = itens.join('');
+    }
+
     function renderizarCalendario() {
       document.getElementById('mesAnoTitulo').textContent = `${MESES[mesAtual]} de ${anoAtual}`;
       const grade = document.getElementById('gradeCalendario');
@@ -285,6 +312,10 @@
       const primeiroDia = new Date(anoAtual, mesAtual, 1).getDay(); // 0=dom
       const totalDias = new Date(anoAtual, mesAtual + 1, 0).getDate();
       const hoje = new Date();
+
+      // Conjunto de dias da semana com horários cadastrados (para realce)
+      const diasComHorario = new Set(horariosTrabalhadorAtual.map(h => Number(h.dia_semana)));
+      const temFiltroHorario = horariosTrabalhadorAtual.length > 0;
 
       // Células vazias antes do primeiro dia
       for (let i = 0; i < primeiroDia; i++) {
@@ -295,23 +326,79 @@
         const dataStr = `${anoAtual}-${String(mesAtual+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         const ehHoje = hoje.getFullYear() === anoAtual && hoje.getMonth() === mesAtual && hoje.getDate() === d;
         const ehSelecionado = diaSelecionado === dataStr;
-        const qtdAgend = agendamentos.filter(a => a.data_agendamento && a.data_agendamento.startsWith(dataStr)).length;
+        const diaSemana = new Date(dataStr + 'T12:00:00').getDay();
+        const ePassado = new Date(dataStr + 'T23:59:59') < hoje && !ehHoje;
 
-        let classeBase = 'h-10 md:h-14 rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all text-sm font-semibold relative select-none ';
-        if (ehSelecionado) classeBase += 'bg-yellow-500 text-slate-900 shadow-lg';
-        else if (ehHoje) classeBase += 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 hover:bg-yellow-500/30';
-        else classeBase += 'text-slate-300 hover:bg-slate-700';
+        // Agendamentos do dia (todos)
+        const agsDia = agendamentos.filter(a => a.data_agendamento && a.data_agendamento.startsWith(dataStr));
+        const temAgend = agsDia.length > 0;
+        const agsAtivos = agsDia.filter(a => a.status_agendamento !== 'cancelado').length;
+        const agsCancelados = agsDia.filter(a => a.status_agendamento === 'cancelado').length;
 
-        const pontinho = qtdAgend > 0
-          ? `<span class="absolute bottom-1 w-1.5 h-1.5 rounded-full ${ehSelecionado ? 'bg-slate-900' : 'bg-yellow-500'}"></span>`
-          : '';
+        // Disponibilidade do trabalhador
+        const estaDisponivel = !temFiltroHorario || diasComHorario.has(diaSemana);
+
+        // === CLASSES BASE ===
+        let classeBase = 'h-10 md:h-14 rounded-lg flex flex-col items-center justify-center transition-all text-sm font-semibold relative select-none ';
+
+        if (ehSelecionado) {
+          classeBase += 'bg-yellow-500 text-slate-900 shadow-lg ring-2 ring-yellow-300 cursor-pointer';
+        } else if (ehHoje) {
+          classeBase += 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 hover:bg-yellow-500/30 cursor-pointer';
+        } else if (temFiltroHorario && !estaDisponivel && tipoPerfil === 'cliente') {
+          // Dias em que o prestador não atende (para cliente): bloqueados visualmente
+          classeBase += 'bg-red-900/20 text-slate-600 border border-red-900/30 cursor-not-allowed opacity-60';
+        } else if (temFiltroHorario && estaDisponivel && !ePassado && tipoPerfil === 'cliente') {
+          // Dias disponíveis do prestador (para cliente)
+          classeBase += 'bg-green-500/10 text-green-300 border border-green-500/30 hover:bg-green-500/20 cursor-pointer';
+        } else if (estaDisponivel && !ePassado && temFiltroHorario && tipoPerfil === 'trabalhador') {
+          // Dias de trabalho do próprio trabalhador
+          classeBase += 'bg-green-500/10 text-green-300 border border-green-500/30 hover:bg-green-500/20 cursor-pointer';
+        } else if (ePassado) {
+          classeBase += 'text-slate-600 cursor-default';
+        } else {
+          classeBase += 'text-slate-300 hover:bg-slate-700 cursor-pointer';
+        }
+
+        // Borda extra para dias com agendamentos ativos
+        if (temAgend && agsAtivos > 0 && !ehSelecionado) {
+          classeBase = classeBase.replace('border border-', 'border-2 border-');
+          if (!classeBase.includes('border')) {
+            classeBase += ' border-2 border-blue-400/60';
+          } else {
+            // Troca cor de borda existente por azul para indicar agendamento
+            classeBase = classeBase.replace(/border-(slate|green|red|yellow)-[^\s]+/g, 'border-blue-400/70');
+          }
+        }
+
+        // Indicadores de agendamento (bolinhas embaixo)
+        let indicadores = '';
+        if (agsAtivos > 0 || agsCancelados > 0) {
+          if (agsAtivos > 0) {
+            indicadores += `<span class="absolute bottom-1 w-1.5 h-1.5 rounded-full ${ehSelecionado ? 'bg-slate-900' : 'bg-blue-400'}" style="right: calc(50% + 2px)"></span>`;
+          }
+          if (agsCancelados > 0 && !ehSelecionado) {
+            indicadores += `<span class="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-red-500" style="left: calc(50% + 2px)"></span>`;
+          }
+          if (agsDia.length === 1) {
+            // só 1 indicador, centralizado
+            indicadores = `<span class="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full ${ehSelecionado ? 'bg-slate-900' : (agsAtivos > 0 ? 'bg-blue-400' : 'bg-red-500')}"></span>`;
+          }
+        }
+
+        // Click: dias bloqueados (prestador não atende) não são selecionáveis para cliente
+        const clickAttr = (temFiltroHorario && !estaDisponivel && tipoPerfil === 'cliente')
+          ? `onclick="alertaIndisponivel('${DIAS_NOMES[diaSemana]}')"` 
+          : `onclick="selecionarDia('${dataStr}')"`;
 
         grade.innerHTML += `
-          <div class="${classeBase}" onclick="selecionarDia('${dataStr}')">
+          <div class="${classeBase}" ${clickAttr}>
             ${d}
-            ${pontinho}
+            ${indicadores}
           </div>`;
       }
+
+      atualizarLegenda();
     }
 
     async function mudarMes(delta) {
@@ -407,6 +494,34 @@
       } catch(e) { console.error(e); }
     }
 
+    // Carrega horários do trabalhador logado (apenas para o perfil trabalhador)
+    async function carregarDiasTrabalhoCalendario() {
+      try {
+        const res = await fetch('/meu-horario', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          horariosTrabalhadorAtual = await res.json();
+        }
+      } catch(e) { console.error(e); }
+    }
+
+    function alertaIndisponivel(nomeDia) {
+      const erroEl = document.getElementById('erroModalAgendar');
+      // Se o modal estiver aberto, mostra erro lá. Caso contrário, exibe toast rápido.
+      if (!document.getElementById('modalAgendar').classList.contains('hidden')) {
+        erroEl.textContent = `O prestador não atende em ${nomeDia}. Escolha outro dia.`;
+        erroEl.classList.remove('hidden');
+      } else {
+        // Toast simples
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 bg-red-800/90 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg z-50 pointer-events-none';
+        toast.textContent = `❌ Prestador não atende em ${nomeDia}`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2500);
+      }
+    }
+
     async function aoMudarServicoAgend(idServico) {
       const infoEl = document.getElementById('infoHorarioTrabalhador');
       const selHora = document.getElementById('inputHoraAgend');
@@ -415,6 +530,7 @@
       if (!idServico) {
         infoEl.classList.add('hidden');
         selHora.innerHTML = '<option value="">Selecione o serviço e a data primeiro...</option>';
+        renderizarCalendario(); // limpa destaques
         return;
       }
 
@@ -449,6 +565,8 @@
         infoEl.classList.remove('hidden');
       }
 
+      // Atualiza o calendário principal para refletir disponibilidade do prestador
+      renderizarCalendario();
       atualizarHorariosDisponiveis();
     }
 
