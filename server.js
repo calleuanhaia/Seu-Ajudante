@@ -456,29 +456,74 @@ app.post('/servicos-oferecidos/:id/avaliar', autenticarToken, (req, res) => {
         return res.status(500).json({ erro: 'Erro ao salvar avaliação.' });
       }
 
+      // Notifica o trabalhador sobre a nova avaliação
+      db.query('SELECT id_trabalhador, titulo FROM servicos_oferecidos WHERE id = ?', [idServico], (errS, rowsS) => {
+        if (!errS && rowsS.length > 0) {
+          criarNotificacao(
+            rowsS[0].id_trabalhador,
+            'trabalhador',
+            'Nova Avaliação Recebida',
+            `Um cliente avaliou "${rowsS[0].titulo}" com ${nota} estrela(s).`
+          );
+        }
+      });
+
       res.status(201).json({ mensagem: 'Avaliação enviada com sucesso!' });
     });
   });
 });
 
 // ==========================================
-// ROTA: NOTIFICAÇÕES (AMBOS OS PERFIS)
+// HELPER E ROTAS: NOTIFICAÇÕES (AMBOS OS PERFIS)
 // ==========================================
+function criarNotificacao(id_usuario, tipo_usuario, titulo, mensagem) {
+  if (!id_usuario || !tipo_usuario) return;
+  const sql = 'INSERT INTO notificacoes (id_usuario, tipo_usuario, titulo, mensagem, lida) VALUES (?, ?, ?, ?, 0)';
+  db.query(sql, [id_usuario, tipo_usuario, titulo, mensagem], (err) => {
+    if (err) console.error('Erro ao criar notificação:', err);
+  });
+}
+
 app.get('/notificacoes', autenticarToken, (req, res) => {
-  // Retorna lista vazia caso a tabela ainda não esteja populada
   const sql = `
-    SELECT id, titulo, mensagem, DATE_FORMAT(data_criacao, '%d/%m %H:%i') as data_formatada 
+    SELECT id, titulo, mensagem, lida, DATE_FORMAT(data_criacao, '%d/%m %H:%i') as data_formatada 
     FROM notificacoes 
     WHERE id_usuario = ? AND tipo_usuario = ? 
-    ORDER BY id DESC LIMIT 10
+    ORDER BY id DESC LIMIT 20
   `;
 
   db.query(sql, [req.usuario.id, req.usuario.tipo], (err, results) => {
     if (err) {
-      // Se a tabela ainda não existe no MySQL, retorna array vazio sem quebrar a tela
       return res.json([]);
     }
     res.json(results);
+  });
+});
+
+// Marcar todas como lidas
+app.put('/notificacoes/ler-todas', autenticarToken, (req, res) => {
+  const sql = 'UPDATE notificacoes SET lida = 1 WHERE id_usuario = ? AND tipo_usuario = ?';
+  db.query(sql, [req.usuario.id, req.usuario.tipo], (err) => {
+    if (err) return res.status(500).json({ erro: 'Erro ao atualizar notificações.' });
+    res.json({ mensagem: 'Todas as notificações foram marcadas como lidas.' });
+  });
+});
+
+// Marcar uma notificação como lida
+app.put('/notificacoes/:id/lida', autenticarToken, (req, res) => {
+  const sql = 'UPDATE notificacoes SET lida = 1 WHERE id = ? AND id_usuario = ? AND tipo_usuario = ?';
+  db.query(sql, [req.params.id, req.usuario.id, req.usuario.tipo], (err) => {
+    if (err) return res.status(500).json({ erro: 'Erro ao atualizar notificação.' });
+    res.json({ mensagem: 'Notificação marcada como lida.' });
+  });
+});
+
+// Limpar notificações já lidas
+app.delete('/notificacoes/limpar', autenticarToken, (req, res) => {
+  const sql = 'DELETE FROM notificacoes WHERE id_usuario = ? AND tipo_usuario = ? AND lida = 1';
+  db.query(sql, [req.usuario.id, req.usuario.tipo], (err) => {
+    if (err) return res.status(500).json({ erro: 'Erro ao limpar notificações.' });
+    res.json({ mensagem: 'Notificações lidas removidas.' });
   });
 });
 
@@ -637,6 +682,18 @@ app.put('/servicos/:id/status', autenticarToken, (req, res) => {
       db.query("UPDATE agendamentos SET status_agendamento = 'confirmado' WHERE id_servico = ? AND status_agendamento = 'pendente'", [id]);
     }
 
+    // Notifica a outra parte envolvida no serviço
+    db.query('SELECT id_cliente, id_trabalhador FROM servicos WHERE id = ?', [id], (errS, rowsS) => {
+      if (!errS && rowsS.length > 0) {
+        const destTipo = tipoUsuario === 'cliente' ? 'trabalhador' : 'cliente';
+        const destId = tipoUsuario === 'cliente' ? rowsS[0].id_trabalhador : rowsS[0].id_cliente;
+        const msg = ehCancelado
+          ? `O serviço #${id} foi cancelado. Motivo: ${motivo}`
+          : `O status do serviço #${id} foi atualizado para "${status}".`;
+        criarNotificacao(destId, destTipo, 'Atualização de Serviço', msg);
+      }
+    });
+
     res.json({
       mensagem: 'Status atualizado com sucesso!',
       status: status,
@@ -692,6 +749,13 @@ app.post('/servicos', autenticarToken, (req, res) => {
         `;
         db.query(sqlAgend, [idContratacao, id_cliente, id_trabalhador, data_agendamento, hora_agendamento, especificacoes || null], (errAgend) => {
           if (errAgend) console.error('Erro ao criar agendamento vinculado:', errAgend);
+          const dataBr = data_agendamento.split('-').reverse().join('/');
+          criarNotificacao(
+            id_trabalhador,
+            'trabalhador',
+            'Novo Serviço Contratado',
+            `Um cliente contratou seu serviço (R$ ${parseFloat(valor).toFixed(2)}) agendado para ${dataBr} às ${hora_agendamento}.`
+          );
           return res.status(201).json({
             mensagem: 'Serviço contratado e agendado com sucesso!',
             id_contratacao: idContratacao
@@ -699,6 +763,12 @@ app.post('/servicos', autenticarToken, (req, res) => {
         });
       });
     } else {
+      criarNotificacao(
+        id_trabalhador,
+        'trabalhador',
+        'Novo Serviço Contratado',
+        `Um cliente solicitou seu serviço (R$ ${parseFloat(valor).toFixed(2)}).`
+      );
       res.status(201).json({
         mensagem: 'Serviço contratado com sucesso!',
         id_contratacao: idContratacao
@@ -828,6 +898,13 @@ app.post('/agendamentos', autenticarToken, (req, res) => {
       `;
       db.query(sql, [id_servico, id_cliente, id_trabalhador, data_agendamento, hora_agendamento, observacao || null], (err2, result) => {
         if (err2) { console.error(err2); return res.status(500).json({ erro: 'Erro ao salvar agendamento.' }); }
+        const dataBr = data_agendamento.split('-').reverse().join('/');
+        criarNotificacao(
+          id_trabalhador,
+          'trabalhador',
+          'Novo Agendamento',
+          `Um cliente agendou o serviço #${id_servico} para ${dataBr} às ${hora_agendamento}.`
+        );
         res.status(201).json({ mensagem: 'Agendamento criado com sucesso!', id: result.insertId });
       });
     });
@@ -900,6 +977,26 @@ app.put('/agendamentos/:id/cancelar', autenticarToken, (req, res) => {
   db.query(sql, [id, userId], (err, result) => {
     if (err) { console.error(err); return res.status(500).json({ erro: 'Erro ao cancelar agendamento.' }); }
     if (result.affectedRows === 0) return res.status(404).json({ erro: 'Agendamento não encontrado ou sem permissão.' });
+
+    db.query('SELECT id_cliente, id_trabalhador, data_agendamento, hora_agendamento FROM agendamentos WHERE id = ?', [id], (errA, rowsA) => {
+      if (!errA && rowsA.length > 0) {
+        const ag = rowsA[0];
+        const destTipo = tipo === 'cliente' ? 'trabalhador' : 'cliente';
+        const destId = tipo === 'cliente' ? ag.id_trabalhador : ag.id_cliente;
+        const dataStr = ag.data_agendamento instanceof Date
+          ? ag.data_agendamento.toISOString().split('T')[0]
+          : String(ag.data_agendamento).split('T')[0];
+        const dataBr = dataStr.split('-').reverse().join('/');
+        const hora = String(ag.hora_agendamento || '').substring(0, 5);
+        criarNotificacao(
+          destId,
+          destTipo,
+          'Agendamento Cancelado',
+          `O agendamento de ${dataBr} às ${hora} foi cancelado.`
+        );
+      }
+    });
+
     res.json({ mensagem: 'Agendamento cancelado.' });
   });
 });

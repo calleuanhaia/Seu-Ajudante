@@ -85,28 +85,7 @@
       <div class="flex items-center gap-4">
         
         <!-- PAINEL / BOTÃO DE NOTIFICAÇÕES -->
-        <div class="relative">
-          <button id="btnNotificacoes" onclick="toggleDropdownNotificacoes()" class="relative p-2 bg-slate-900 border border-slate-700 hover:border-yellow-500/50 rounded-full text-slate-300 hover:text-yellow-500 transition-all focus:outline-none">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9"/>
-            </svg>
-            <span id="badgeNotificacoes" class="absolute -top-1 -right-1 bg-yellow-500 text-slate-900 text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
-          </button>
-
-          <!-- DROPDOWN DE NOTIFICAÇÕES -->
-          <div id="dropdownNotificacoes" class="hidden absolute right-0 mt-3 w-80 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl overflow-hidden z-50">
-            <div class="p-3 bg-slate-900 border-b border-slate-700/80 flex items-center justify-between">
-              <span class="text-xs font-bold uppercase tracking-wider text-yellow-500">Notificações</span>
-              <span id="txtQtdNotificacoes" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700">0 novas</span>
-            </div>
-
-            <div id="containerListaNotificacoes" class="max-h-64 overflow-y-auto divide-y divide-slate-700/50">
-              <div class="p-6 text-center text-slate-500 italic text-xs">
-                Nenhuma notificação no momento.
-              </div>
-            </div>
-          </div>
-        </div>
+        <div id="slotNotificacoes"></div>
 
         <!-- INDICADOR DE STATUS ONLINE -->
         <div class="flex items-center gap-2 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-full text-xs">
@@ -463,60 +442,8 @@
         carregarRecentesTrabalhador(token);
       }
 
-      carregarNotificacoes(token);
+      if (window.carregarNotificacoes) window.carregarNotificacoes(token);
     });
-
-    function toggleDropdownNotificacoes() {
-      const dropdown = document.getElementById('dropdownNotificacoes');
-      dropdown.classList.toggle('hidden');
-    }
-
-    document.addEventListener('click', (e) => {
-      const btn = document.getElementById('btnNotificacoes');
-      const dropdown = document.getElementById('dropdownNotificacoes');
-      if (btn && dropdown && !btn.contains(e.target) && !dropdown.contains(e.target)) {
-        dropdown.classList.add('hidden');
-      }
-    });
-
-    async function carregarNotificacoes(token) {
-      const container = document.getElementById('containerListaNotificacoes');
-      const badge = document.getElementById('badgeNotificacoes');
-      const txtQtd = document.getElementById('txtQtdNotificacoes');
-
-      try {
-        const response = await fetch('/notificacoes', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        if (response.ok) {
-          const notificacoes = await response.json();
-
-          if (notificacoes.length > 0) {
-            badge.textContent = notificacoes.length;
-            badge.classList.remove('hidden');
-            txtQtd.textContent = `${notificacoes.length} nova(s)`;
-
-            container.innerHTML = notificacoes.map(n => `
-              <div class="p-3 hover:bg-slate-700/30 transition-colors">
-                <p class="text-xs font-semibold text-slate-200">${n.titulo}</p>
-                <p class="text-[11px] text-slate-400 mt-0.5">${n.mensagem}</p>
-                <span class="text-[9px] text-slate-500 mt-1 block">${n.data_formatada || ''}</span>
-              </div>
-            `).join('');
-            return;
-          }
-        }
-      } catch (err) {}
-
-      badge.classList.add('hidden');
-      txtQtd.textContent = '0 novas';
-      container.innerHTML = `
-        <div class="p-6 text-center text-slate-500 italic text-xs">
-          Nenhuma notificação no momento.
-        </div>
-      `;
-    }
 
     async function carregarRecentesTrabalhador(token) {
       const tbody = document.getElementById('bodyTabelaRecentes');
@@ -1087,5 +1014,6 @@
       }
     });
   </script>
+  <script src="notificacoes.js"></script>
 </body>
 </html>

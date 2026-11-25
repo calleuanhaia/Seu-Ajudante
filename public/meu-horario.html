@@ -70,9 +70,12 @@
   <main class="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
 
     <!-- HEADER -->
-    <header class="flex-shrink-0 bg-slate-800 border-b border-slate-700/60 p-4 px-6 relative z-20">
-      <h2 class="text-xl font-bold text-slate-100">Meus Horários de Trabalho</h2>
-      <p class="text-xs text-slate-400">Configure os dias e períodos em que você está disponível para atendimento</p>
+    <header class="flex-shrink-0 bg-slate-800 border-b border-slate-700/60 p-4 px-6 flex items-center justify-between relative z-20">
+      <div>
+        <h2 class="text-xl font-bold text-slate-100">Meus Horários de Trabalho</h2>
+        <p class="text-xs text-slate-400">Configure os dias e períodos em que você está disponível para atendimento</p>
+      </div>
+      <div id="slotNotificacoes"></div>
     </header>
 
     <!-- CONTEÚDO SCROLLÁVEL -->
@@ -377,5 +380,6 @@
       document.getElementById('painelPrevia').classList.remove('hidden');
     }
   </script>
+  <script src="notificacoes.js"></script>
 </body>
 </html>

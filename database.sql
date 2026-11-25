@@ -134,6 +134,7 @@ CREATE TABLE `notificacoes` (
   `tipo_usuario` enum('cliente','trabalhador') NOT NULL,
   `titulo` varchar(255) NOT NULL,
   `mensagem` text NOT NULL,
+  `lida` tinyint(1) NOT NULL DEFAULT '0',
   `data_criacao` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
