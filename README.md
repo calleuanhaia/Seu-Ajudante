@@ -37,6 +37,10 @@ mysql -u root -p < database.sql
 
 > **Atenção:** Verifique as credenciais de conexão com o MySQL no início do arquivo `server.js` (`host`, `user`, `password`, `database`). Por padrão está configurado para `localhost`, usuário `root`, banco `projetoservicos`.
 
+### 2.1. Verificação por código de 6 dígitos (E-mail e Telefone)
+
+No cadastro, o sistema valida se o e-mail possui domínio MX real e se o telefone tem formato/DDD brasileiro válido. Ao clicar em **Enviar Código**, o servidor gera e armazena um código aleatório de 6 dígitos (válido por 10 minutos) e o retorna na resposta/console para envio externo (fora do Node.js) e confirmação no formulário.
+
 ### 3. Iniciar o servidor
 
 Para rodar em produção:

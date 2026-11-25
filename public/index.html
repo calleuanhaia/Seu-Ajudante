@@ -43,12 +43,44 @@
       <div id="camposRegistro" class="space-y-4 hidden">
         <div>
           <label class="block text-sm font-semibold text-yellow-600 mb-1" for="email">E-mail</label>
-          <input type="email" id="email" placeholder="seu@email.com" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded focus:outline-none focus:border-yellow-500 text-slate-100 transition-colors">
+          <div class="flex gap-2">
+            <input type="email" id="email" placeholder="seu@email.com" oninput="resetarVerificacao('email')" class="flex-1 px-4 py-2 bg-slate-900 border border-slate-700 rounded focus:outline-none focus:border-yellow-500 text-slate-100 transition-colors">
+            <button type="button" id="btnEnviarEmail" onclick="enviarCodigo('email')" class="px-3 py-2 bg-yellow-600/20 hover:bg-yellow-500/30 border border-yellow-600/40 text-yellow-400 text-xs font-bold rounded transition-colors whitespace-nowrap">
+              Enviar Código
+            </button>
+          </div>
+          <div id="boxCodigoEmail" class="hidden mt-2 space-y-2">
+            <div id="exibirCodigoEmail" class="hidden flex items-center justify-between bg-yellow-500/10 border border-yellow-500/40 rounded px-3 py-1.5 text-xs text-yellow-300">
+              <span>Código gerado: <strong id="valorCodigoEmail" class="tracking-widest text-yellow-400"></strong></span>
+              <button type="button" onclick="copiarCodigo('email')" class="px-2 py-0.5 bg-yellow-600/30 hover:bg-yellow-500/40 text-yellow-200 rounded font-semibold transition-colors">Copiar</button>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="text" id="codigoEmail" data-codigo="true" maxlength="6" placeholder="Código 6 dígitos" class="w-36 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded text-sm text-slate-100 tracking-widest text-center focus:outline-none focus:border-yellow-500">
+              <button type="button" onclick="verificarCodigo('email')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded transition-colors">Confirmar</button>
+            </div>
+          </div>
+          <p id="statusVerifEmail" class="hidden text-xs mt-1 font-semibold"></p>
         </div>
 
         <div>
           <label class="block text-sm font-semibold text-yellow-600 mb-1" for="telefone">Telefone</label>
-          <input type="tel" id="telefone" placeholder="(00) 00000-0000" class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded focus:outline-none focus:border-yellow-500 text-slate-100 transition-colors">
+          <div class="flex gap-2">
+            <input type="tel" id="telefone" placeholder="(11) 99999-9999" oninput="resetarVerificacao('telefone')" class="flex-1 px-4 py-2 bg-slate-900 border border-slate-700 rounded focus:outline-none focus:border-yellow-500 text-slate-100 transition-colors">
+            <button type="button" id="btnEnviarTelefone" onclick="enviarCodigo('telefone')" class="px-3 py-2 bg-yellow-600/20 hover:bg-yellow-500/30 border border-yellow-600/40 text-yellow-400 text-xs font-bold rounded transition-colors whitespace-nowrap">
+              Enviar Código
+            </button>
+          </div>
+          <div id="boxCodigoTelefone" class="hidden mt-2 space-y-2">
+            <div id="exibirCodigoTelefone" class="hidden flex items-center justify-between bg-yellow-500/10 border border-yellow-500/40 rounded px-3 py-1.5 text-xs text-yellow-300">
+              <span>Código gerado: <strong id="valorCodigoTelefone" class="tracking-widest text-yellow-400"></strong></span>
+              <button type="button" onclick="copiarCodigo('telefone')" class="px-2 py-0.5 bg-yellow-600/30 hover:bg-yellow-500/40 text-yellow-200 rounded font-semibold transition-colors">Copiar</button>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="text" id="codigoTelefone" data-codigo="true" maxlength="6" placeholder="Código 6 dígitos" class="w-36 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded text-sm text-slate-100 tracking-widest text-center focus:outline-none focus:border-yellow-500">
+              <button type="button" onclick="verificarCodigo('telefone')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded transition-colors">Confirmar</button>
+            </div>
+          </div>
+          <p id="statusVerifTelefone" class="hidden text-xs mt-1 font-semibold"></p>
         </div>
 
         <div>
@@ -172,9 +204,122 @@
     const btnSubmit = document.getElementById('btnSubmit');
     const msgDiv = document.getElementById('mensagem');
     const camposRegistro = document.getElementById('camposRegistro');
-    const inputsRegistro = camposRegistro.querySelectorAll('input:not([readonly]):not([type="checkbox"]):not([type="time"])');
+    const inputsRegistro = camposRegistro.querySelectorAll('input:not([readonly]):not([type="checkbox"]):not([type="time"]):not([data-codigo])');
     const secaoHorariosCadastro = document.getElementById('secaoHorariosCadastro');
     const selectTipo = document.getElementById('tipo');
+
+    const verificacoesEstado = { email: false, telefone: false };
+
+    function resetarVerificacao(tipo) {
+      verificacoesEstado[tipo] = false;
+      const cap = tipo === 'email' ? 'Email' : 'Telefone';
+      document.getElementById(`boxCodigo${cap}`).classList.add('hidden');
+      document.getElementById(`exibirCodigo${cap}`).classList.add('hidden');
+      document.getElementById(`valorCodigo${cap}`).textContent = '';
+      document.getElementById(`statusVerif${cap}`).classList.add('hidden');
+      document.getElementById(`codigo${cap}`).value = '';
+    }
+
+    async function copiarCodigo(tipo) {
+      const cap = tipo === 'email' ? 'Email' : 'Telefone';
+      const codigo = document.getElementById(`valorCodigo${cap}`).textContent.trim();
+      if (!codigo) return;
+      try {
+        await navigator.clipboard.writeText(codigo);
+        const statusEl = document.getElementById(`statusVerif${cap}`);
+        statusEl.textContent = `Código ${codigo} copiado!`;
+        statusEl.className = 'text-xs mt-1 font-semibold text-yellow-400';
+        statusEl.classList.remove('hidden');
+      } catch (e) {
+        document.getElementById(`codigo${cap}`).value = codigo;
+      }
+    }
+
+    async function enviarCodigo(tipo) {
+      const cap = tipo === 'email' ? 'Email' : 'Telefone';
+      const destino = document.getElementById(tipo).value.trim();
+      const statusEl = document.getElementById(`statusVerif${cap}`);
+      const btn = document.getElementById(`btnEnviar${cap}`);
+
+      if (!destino) {
+        statusEl.textContent = `Informe o ${tipo === 'email' ? 'e-mail' : 'telefone'} primeiro.`;
+        statusEl.className = 'text-xs mt-1 font-semibold text-red-400';
+        statusEl.classList.remove('hidden');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+      statusEl.classList.add('hidden');
+
+      try {
+        const res = await fetch('/enviar-codigo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tipo, destino })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          statusEl.textContent = data.erro || 'Erro ao enviar código.';
+          statusEl.className = 'text-xs mt-1 font-semibold text-red-400';
+          statusEl.classList.remove('hidden');
+        } else {
+          document.getElementById(`boxCodigo${cap}`).classList.remove('hidden');
+          if (data.codigo) {
+            document.getElementById(`valorCodigo${cap}`).textContent = data.codigo;
+            document.getElementById(`exibirCodigo${cap}`).classList.remove('hidden');
+          }
+          statusEl.textContent = data.mensagem || `Código gerado! Digite o código de 6 dígitos para confirmar.`;
+          statusEl.className = 'text-xs mt-1 font-semibold text-yellow-400';
+          statusEl.classList.remove('hidden');
+        }
+      } catch (e) {
+        statusEl.textContent = 'Erro de conexão ao enviar código.';
+        statusEl.className = 'text-xs mt-1 font-semibold text-red-400';
+        statusEl.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Reenviar';
+      }
+    }
+
+    async function verificarCodigo(tipo) {
+      const cap = tipo === 'email' ? 'Email' : 'Telefone';
+      const destino = document.getElementById(tipo).value.trim();
+      const codigo = document.getElementById(`codigo${cap}`).value.trim();
+      const statusEl = document.getElementById(`statusVerif${cap}`);
+
+      if (codigo.length !== 6) {
+        statusEl.textContent = 'Digite o código de 6 dígitos.';
+        statusEl.className = 'text-xs mt-1 font-semibold text-red-400';
+        statusEl.classList.remove('hidden');
+        return;
+      }
+
+      try {
+        const res = await fetch('/verificar-codigo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tipo, destino, codigo })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          statusEl.textContent = data.erro || 'Código inválido.';
+          statusEl.className = 'text-xs mt-1 font-semibold text-red-400';
+          statusEl.classList.remove('hidden');
+        } else {
+          verificacoesEstado[tipo] = true;
+          document.getElementById(`boxCodigo${cap}`).classList.add('hidden');
+          statusEl.textContent = `✓ ${tipo === 'email' ? 'E-mail' : 'Telefone'} confirmado!`;
+          statusEl.className = 'text-xs mt-1 font-semibold text-emerald-400';
+          statusEl.classList.remove('hidden');
+        }
+      } catch (e) {
+        statusEl.textContent = 'Erro de conexão ao verificar código.';
+        statusEl.className = 'text-xs mt-1 font-semibold text-red-400';
+        statusEl.classList.remove('hidden');
+      }
+    }
 
     const DIAS_SEMANA_CAD = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
     const PERIODOS_CAD = [
@@ -427,6 +572,12 @@
       const payload = { usuario, senha, tipo };
 
       if (!modoLogin) {
+        if (!verificacoesEstado.email || !verificacoesEstado.telefone) {
+          msgDiv.textContent = 'Erro: Confirme os códigos de 6 dígitos do e-mail e do telefone antes de registrar.';
+          msgDiv.classList.remove('hidden', 'text-green-500');
+          msgDiv.classList.add('text-red-500');
+          return;
+        }
         payload.email     = document.getElementById('email').value;
         payload.telefone  = document.getElementById('telefone').value;
         payload.cpf       = document.getElementById('cpf').value;

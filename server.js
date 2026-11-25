@@ -1,10 +1,14 @@
 // 1. IMPORTANDO AS BIBLIOTECAS
+require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const path = require('path');
+const dns = require('dns').promises;
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 // 2. INICIALIZANDO O SERVIDOR EXPRESS
 const app = express();
@@ -29,6 +33,194 @@ db.connect((err) => {
 const SECRET_KEY = 'minha_chave_secreta_super_segura_123';
 
 // ==========================================
+// HELPERS DE VALIDAÇÃO E ENVIO DE CÓDIGO (6 DÍGITOS)
+// ==========================================
+function normalizarTelefone(tel) {
+  let d = String(tel || '').replace(/\D/g, '');
+  if ((d.length === 12 || d.length === 13) && d.startsWith('55')) {
+    d = d.slice(2);
+  }
+  return d;
+}
+
+function validarTelefoneReal(tel) {
+  const d = normalizarTelefone(tel);
+  if (d.length !== 10 && d.length !== 11) {
+    return { valido: false, erro: 'Telefone deve ter DDD + 8 ou 9 dígitos (ex: 11999998888).' };
+  }
+  const ddd = parseInt(d.slice(0, 2), 10);
+  if (ddd < 11 || ddd > 99 || ddd % 10 === 0) {
+    return { valido: false, erro: 'DDD inválido.' };
+  }
+  if (/^(\d)\1+$/.test(d.slice(2))) {
+    return { valido: false, erro: 'Número de telefone inválido.' };
+  }
+  if (d.length === 11 && d[2] !== '9') {
+    return { valido: false, erro: 'Celular com 11 dígitos deve começar com 9 após o DDD.' };
+  }
+  return { valido: true, limpo: d };
+}
+
+async function validarEmailReal(email) {
+  const valor = String(email || '').trim().toLowerCase();
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  if (!regex.test(valor)) {
+    return { valido: false, erro: 'Formato de e-mail inválido.' };
+  }
+  const dominio = valor.split('@')[1];
+  try {
+    const mx = await dns.resolveMx(dominio);
+    if (!mx || mx.length === 0) {
+      return { valido: false, erro: 'O domínio deste e-mail não possui servidor de correio (MX) válido.' };
+    }
+    return { valido: true, email: valor };
+  } catch (e) {
+    return { valido: false, erro: 'Domínio de e-mail inexistente ou inacessível.' };
+  }
+}
+
+async function enviarEmailCodigo(email, codigo) {
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+    console.log(`[MODO TESTE - E-MAIL] Código para ${email}: ${codigo}`);
+    return { enviadoReal: false };
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: Number(SMTP_PORT || 587),
+    secure: Number(SMTP_PORT) === 465,
+    auth: { user: SMTP_USER, pass: SMTP_PASS }
+  });
+
+  await transporter.sendMail({
+    from: `"Projeto Serviços" <${SMTP_USER}>`,
+    to: email,
+    subject: 'Código de Verificação - Projeto Serviços',
+    text: `Seu código de confirmação é: ${codigo}. Ele expira em 10 minutos.`,
+    html: `<div style="font-family:sans-serif;padding:16px;"><h2>Projeto Serviços</h2><p>Seu código de verificação é:</p><p style="font-size:28px;font-weight:bold;letter-spacing:4px;color:#ca8a04;">${codigo}</p><p>Válido por 10 minutos.</p></div>`
+  });
+  return { enviadoReal: true };
+}
+
+async function enviarSmsCodigo(telefoneLimpo, codigo) {
+  const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER } = process.env;
+  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
+    console.log(`[MODO TESTE - SMS] Código para +55${telefoneLimpo}: ${codigo}`);
+    return { enviadoReal: false };
+  }
+
+  const auth = Buffer.from(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`).toString('base64');
+  const body = new URLSearchParams({
+    To: `+55${telefoneLimpo}`,
+    From: TWILIO_PHONE_NUMBER,
+    Body: `Projeto Servicos: seu codigo de confirmacao e ${codigo}. Valido por 10 minutos.`
+  });
+
+  const resp = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${auth}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: body.toString()
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`Falha ao enviar SMS: ${errText}`);
+  }
+  return { enviadoReal: true };
+}
+
+// ==========================================
+// ROTA: ENVIAR CÓDIGO DE 6 DÍGITOS (E-MAIL OU TELEFONE)
+// ==========================================
+app.post('/enviar-codigo', async (req, res) => {
+  const { tipo, destino } = req.body;
+  if (tipo !== 'email' && tipo !== 'telefone') {
+    return res.status(400).json({ erro: 'Tipo deve ser "email" ou "telefone".' });
+  }
+
+  let destinoNormalizado = '';
+  if (tipo === 'email') {
+    const valEmail = await validarEmailReal(destino);
+    if (!valEmail.valido) return res.status(400).json({ erro: valEmail.erro });
+    destinoNormalizado = valEmail.email;
+  } else {
+    const valTel = validarTelefoneReal(destino);
+    if (!valTel.valido) return res.status(400).json({ erro: valTel.erro });
+    destinoNormalizado = valTel.limpo;
+  }
+
+  const codigo = crypto.randomInt(100000, 1000000).toString();
+
+  db.query('DELETE FROM verificacoes_cadastro WHERE destino = ? AND tipo = ?', [destinoNormalizado, tipo], async (errDel) => {
+    if (errDel) return res.status(500).json({ erro: 'Erro ao preparar verificação.' });
+
+    const sqlIns = `
+      INSERT INTO verificacoes_cadastro (destino, tipo, codigo, verificado, tentativas, expira_em)
+      VALUES (?, ?, ?, 0, 0, DATE_ADD(NOW(), INTERVAL 10 MINUTE))
+    `;
+    db.query(sqlIns, [destinoNormalizado, tipo, codigo], (errIns) => {
+      if (errIns) return res.status(500).json({ erro: 'Erro ao gerar código de verificação.' });
+
+      // Envio externo desacoplado do Node.js:
+      // O código é gerado e armazenado aqui; o envio real (SMS / e-mail) ocorre fora do Node.js.
+      console.log(`[CÓDIGO GERADO] ${tipo.toUpperCase()} -> ${destinoNormalizado}: ${codigo}`);
+      res.json({
+        codigo,
+        mensagem: `Código gerado para ${tipo === 'email' ? 'e-mail' : 'SMS'}. Informe o código recebido no campo abaixo.`
+      });
+    });
+  });
+});
+
+// ==========================================
+// ROTA: VERIFICAR CÓDIGO DE 6 DÍGITOS
+// ==========================================
+app.post('/verificar-codigo', async (req, res) => {
+  const { tipo, destino, codigo } = req.body;
+  if ((tipo !== 'email' && tipo !== 'telefone') || !destino || !codigo) {
+    return res.status(400).json({ erro: 'Informe tipo, destino e o código de 6 dígitos.' });
+  }
+
+  const destinoNormalizado = tipo === 'email'
+    ? String(destino).trim().toLowerCase()
+    : normalizarTelefone(destino);
+
+  const sql = `
+    SELECT * FROM verificacoes_cadastro
+    WHERE destino = ? AND tipo = ?
+    ORDER BY id DESC LIMIT 1
+  `;
+  db.query(sql, [destinoNormalizado, tipo], (err, rows) => {
+    if (err) return res.status(500).json({ erro: 'Erro ao validar código.' });
+    if (rows.length === 0) {
+      return res.status(400).json({ erro: 'Nenhum código foi solicitado para este contato.' });
+    }
+
+    const reg = rows[0];
+    if (new Date(reg.expira_em) < new Date()) {
+      return res.status(400).json({ erro: 'Código expirado. Solicite um novo código.' });
+    }
+    if (reg.tentativas >= 5) {
+      return res.status(429).json({ erro: 'Muitas tentativas inválidas. Solicite um novo código.' });
+    }
+
+    if (String(codigo).trim() !== String(reg.codigo)) {
+      db.query('UPDATE verificacoes_cadastro SET tentativas = tentativas + 1 WHERE id = ?', [reg.id]);
+      return res.status(400).json({ erro: 'Código incorreto.' });
+    }
+
+    db.query('UPDATE verificacoes_cadastro SET verificado = 1 WHERE id = ?', [reg.id], (errUpd) => {
+      if (errUpd) return res.status(500).json({ erro: 'Erro ao confirmar verificação.' });
+      res.json({ mensagem: `${tipo === 'email' ? 'E-mail' : 'Telefone'} confirmado com sucesso!`, verificado: true });
+    });
+  });
+});
+
+// ==========================================
 // ROTA 1: REGISTRO DE USUÁRIO (Cliente ou Trabalhador)
 // ==========================================
 app.post('/registrar', async (req, res) => {
@@ -38,6 +230,40 @@ app.post('/registrar', async (req, res) => {
   // Validação simples do tipo
   if (!tipo || (tipo !== 'cliente' && tipo !== 'trabalhador')) {
     return res.status(400).json({ erro: 'Informe um tipo válido: "cliente" ou "trabalhador".' });
+  }
+
+  // Validação de e-mail e telefone reais
+  const valEmail = await validarEmailReal(email);
+  if (!valEmail.valido) {
+    return res.status(400).json({ erro: valEmail.erro });
+  }
+  const valTel = validarTelefoneReal(telefone);
+  if (!valTel.valido) {
+    return res.status(400).json({ erro: valTel.erro });
+  }
+  const emailNormalizado = valEmail.email;
+  const telefoneNormalizado = valTel.limpo;
+
+  // Verifica se ambos possuem código confirmado
+  const sqlVerif = `
+    SELECT tipo FROM verificacoes_cadastro
+    WHERE ((destino = ? AND tipo = 'email') OR (destino = ? AND tipo = 'telefone'))
+      AND verificado = 1
+      AND expira_em >= DATE_SUB(NOW(), INTERVAL 30 MINUTE)
+  `;
+  const verifRows = await new Promise((resolve, reject) => {
+    db.query(sqlVerif, [emailNormalizado, telefoneNormalizado], (errV, rowsV) => {
+      if (errV) reject(errV);
+      else resolve(rowsV);
+    });
+  }).catch(() => null);
+
+  if (!verifRows) {
+    return res.status(500).json({ erro: 'Erro ao verificar confirmações de contato.' });
+  }
+  const tiposConfirmados = new Set(verifRows.map(r => r.tipo));
+  if (!tiposConfirmados.has('email') || !tiposConfirmados.has('telefone')) {
+    return res.status(400).json({ erro: 'Confirme o código de 6 dígitos no e-mail e no telefone antes de finalizar o cadastro.' });
   }
 
   // Se for trabalhador, valida horários obrigatórios (ao menos 1 dia e 1 período)
@@ -68,7 +294,7 @@ app.post('/registrar', async (req, res) => {
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     db.query(sql, [
-      usuario, email, telefone, senhaCriptografada, cpf,
+      usuario, emailNormalizado, telefoneNormalizado, senhaCriptografada, cpf,
       endereco || null, cidade || null, estado || null, cep || null,
       latitude || null, longitude || null
     ], (err, result) => {
@@ -78,6 +304,12 @@ app.post('/registrar', async (req, res) => {
         }
         return res.status(500).json({ erro: 'Erro interno no banco de dados.' });
       }
+
+      // Remove códigos já utilizados
+      db.query(
+        "DELETE FROM verificacoes_cadastro WHERE (destino = ? AND tipo = 'email') OR (destino = ? AND tipo = 'telefone')",
+        [emailNormalizado, telefoneNormalizado]
+      );
 
       if (tipo === 'trabalhador' && Array.isArray(horarios) && horarios.length > 0) {
         const idTrabalhador = result.insertId;

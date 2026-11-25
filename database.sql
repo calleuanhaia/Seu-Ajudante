@@ -47,7 +47,7 @@ CREATE TABLE `agendamentos` (
   CONSTRAINT `agendamentos_ibfk_1` FOREIGN KEY (`id_servico`) REFERENCES `servicos` (`id`) ON DELETE CASCADE,
   CONSTRAINT `agendamentos_ibfk_2` FOREIGN KEY (`id_cliente`) REFERENCES `clientes` (`id`) ON DELETE CASCADE,
   CONSTRAINT `agendamentos_ibfk_3` FOREIGN KEY (`id_trabalhador`) REFERENCES `trabalhadores` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -98,7 +98,7 @@ CREATE TABLE `clientes` (
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `telefone` (`telefone`),
   UNIQUE KEY `cpf` (`cpf`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -118,7 +118,7 @@ CREATE TABLE `horarios_trabalhador` (
   PRIMARY KEY (`id`),
   KEY `id_trabalhador` (`id_trabalhador`),
   CONSTRAINT `horarios_trabalhador_ibfk_1` FOREIGN KEY (`id_trabalhador`) REFERENCES `trabalhadores` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -134,10 +134,10 @@ CREATE TABLE `notificacoes` (
   `tipo_usuario` enum('cliente','trabalhador') NOT NULL,
   `titulo` varchar(255) NOT NULL,
   `mensagem` text NOT NULL,
-  `lida` tinyint(1) NOT NULL DEFAULT '0',
   `data_criacao` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `lida` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -166,7 +166,7 @@ CREATE TABLE `servicos` (
   CONSTRAINT `servicos_ibfk_1` FOREIGN KEY (`id_cliente`) REFERENCES `clientes` (`id`) ON DELETE CASCADE,
   CONSTRAINT `servicos_ibfk_2` FOREIGN KEY (`id_trabalhador`) REFERENCES `trabalhadores` (`id`) ON DELETE CASCADE,
   CONSTRAINT `servicos_ibfk_3` FOREIGN KEY (`id_servico_oferecido`) REFERENCES `servicos_oferecidos` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -186,7 +186,7 @@ CREATE TABLE `servicos_oferecidos` (
   PRIMARY KEY (`id`),
   KEY `id_trabalhador` (`id_trabalhador`),
   CONSTRAINT `servicos_oferecidos_ibfk_1` FOREIGN KEY (`id_trabalhador`) REFERENCES `trabalhadores` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -214,7 +214,28 @@ CREATE TABLE `trabalhadores` (
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `telefone` (`telefone`),
   UNIQUE KEY `cpf` (`cpf`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `verificacoes_cadastro`
+--
+
+DROP TABLE IF EXISTS `verificacoes_cadastro`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `verificacoes_cadastro` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `destino` varchar(255) NOT NULL,
+  `tipo` enum('email','telefone') NOT NULL,
+  `codigo` varchar(6) NOT NULL,
+  `verificado` tinyint(1) NOT NULL DEFAULT '0',
+  `tentativas` int NOT NULL DEFAULT '0',
+  `expira_em` datetime NOT NULL,
+  `criado_em` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_destino_tipo` (`destino`,`tipo`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -226,4 +247,4 @@ CREATE TABLE `trabalhadores` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-11-24 18:49:59
+-- Dump completed on 2026-11-25 17:56:19
