@@ -1,10 +1,17 @@
 // 1. IMPORTANDO AS BIBLIOTECAS
+require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
+const dns = require('dns').promises;
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+const qrcodeTerminal = require('qrcode-terminal');
+const QRCode = require('qrcode');
 
 // 2. INICIALIZANDO O SERVIDOR EXPRESS
 const app = express();
@@ -29,6 +36,346 @@ db.connect((err) => {
 const SECRET_KEY = 'minha_chave_secreta_super_segura_123';
 
 // ==========================================
+// HELPERS DE VALIDAÇÃO E ENVIO DE CÓDIGO (6 DÍGITOS)
+// ==========================================
+function normalizarTelefone(tel) {
+  let d = String(tel || '').replace(/\D/g, '');
+  if ((d.length === 12 || d.length === 13) && d.startsWith('55')) {
+    d = d.slice(2);
+  }
+  return d;
+}
+
+function validarTelefoneReal(tel) {
+  const d = normalizarTelefone(tel);
+  if (d.length !== 10 && d.length !== 11) {
+    return { valido: false, erro: 'Telefone deve ter DDD + 8 ou 9 dígitos (ex: 11999998888).' };
+  }
+  const ddd = parseInt(d.slice(0, 2), 10);
+  if (ddd < 11 || ddd > 99 || ddd % 10 === 0) {
+    return { valido: false, erro: 'DDD inválido.' };
+  }
+  if (/^(\d)\1+$/.test(d.slice(2))) {
+    return { valido: false, erro: 'Número de telefone inválido.' };
+  }
+  if (d.length === 11 && d[2] !== '9') {
+    return { valido: false, erro: 'Celular com 11 dígitos deve começar com 9 após o DDD.' };
+  }
+  return { valido: true, limpo: d };
+}
+
+async function validarEmailReal(email) {
+  const valor = String(email || '').trim().toLowerCase();
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+  if (!regex.test(valor)) {
+    return { valido: false, erro: 'Formato de e-mail inválido.' };
+  }
+  const dominio = valor.split('@')[1];
+  try {
+    const mx = await dns.resolveMx(dominio);
+    if (!mx || mx.length === 0) {
+      return { valido: false, erro: 'O domínio deste e-mail não possui servidor de correio (MX) válido.' };
+    }
+    return { valido: true, email: valor };
+  } catch (e) {
+    return { valido: false, erro: 'Domínio de e-mail inexistente ou inacessível.' };
+  }
+}
+
+// Limpeza leve a cada 15s: remove do banco códigos pendentes após 1 minuto
+setInterval(() => {
+  db.query('DELETE FROM verificacoes_cadastro WHERE verificado = 0 AND expira_em < NOW()');
+}, 15000);
+
+// ==========================================
+// HELPER: ENVIO DE E-MAIL VIA GMAIL SMTP (Nodemailer)
+// ==========================================
+async function enviarEmailCodigo(destinatario, codigo) {
+  const { GMAIL_USER, GMAIL_APP_PASSWORD } = process.env;
+  if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
+    // Sem credenciais configuradas: apenas loga no console (modo desenvolvimento)
+    console.log(`[DEV] Código para ${destinatario}: ${codigo}`);
+    return;
+  }
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD }
+  });
+  await transporter.sendMail({
+    from: `"Projeto Serviços" <${GMAIL_USER}>`,
+    to: destinatario,
+    subject: 'Código de Verificação — Projeto Serviços',
+    text: `Aqui seu código de 6 dígitos: ${codigo}\n\nVálido por 1 minuto. Não compartilhe com ninguém.`,
+    html: `
+      <div style="font-family:sans-serif;max-width:420px;margin:auto;padding:24px;background:#1e293b;color:#e2e8f0;border-radius:12px;border:1px solid #ca8a04;">
+        <h2 style="color:#eab308;margin-top:0;">Projeto Serviços</h2>
+        <p style="margin-bottom:8px;">Aqui seu código de 6 dígitos:</p>
+        <div style="font-size:36px;font-weight:bold;letter-spacing:8px;color:#facc15;padding:16px 0;text-align:center;">
+          ${codigo}
+        </div>
+        <p style="font-size:12px;color:#94a3b8;margin-top:12px;">Válido por 1 minuto. Não compartilhe com ninguém.</p>
+      </div>`
+  });
+}
+
+// ==========================================
+// ROTA: ENVIAR CÓDIGO DE VERIFICAÇÃO POR E-MAIL (via Gmail SMTP no Node.js)
+// ==========================================
+app.post('/enviar-codigo-email', async (req, res) => {
+  const { email } = req.body;
+  const valEmail = await validarEmailReal(email);
+  if (!valEmail.valido) {
+    return res.status(400).json({ erro: valEmail.erro });
+  }
+
+  const destinoNormalizado = valEmail.email;
+  const codigo = crypto.randomInt(100000, 1000000).toString();
+
+  db.query('DELETE FROM verificacoes_cadastro WHERE destino = ? AND tipo = ?', [destinoNormalizado, 'email'], async (errDel) => {
+    if (errDel) return res.status(500).json({ erro: 'Erro ao preparar verificação.' });
+
+    const sqlIns = `
+      INSERT INTO verificacoes_cadastro (destino, tipo, codigo, verificado, tentativas, expira_em)
+      VALUES (?, 'email', ?, 0, 0, DATE_ADD(NOW(), INTERVAL 1 MINUTE))
+    `;
+    db.query(sqlIns, [destinoNormalizado, codigo], async (errIns) => {
+      if (errIns) return res.status(500).json({ erro: 'Erro ao gerar código de verificação.' });
+
+      try {
+        await enviarEmailCodigo(destinoNormalizado, codigo);
+        res.json({ mensagem: 'Código enviado para o seu e-mail!' });
+      } catch (errMail) {
+        // Remove o código gerado para não deixar lixo no banco
+        db.query('DELETE FROM verificacoes_cadastro WHERE destino = ? AND tipo = ?', [destinoNormalizado, 'email']);
+        console.error('[SMTP] Falha ao enviar e-mail:', errMail.message);
+        res.status(500).json({ erro: 'Não foi possível enviar o e-mail. Verifique as credenciais GMAIL_USER e GMAIL_APP_PASSWORD no .env.' });
+      }
+    });
+  });
+});
+
+// ==========================================
+// CLIENTE WHATSAPP (BAILEYS — SEM NAVEGADOR, ENVIO GRATUITO)
+// ==========================================
+const BAILEYS_AUTH_DIR = path.join(__dirname, '.baileys_auth');
+const baileysLogger = {
+  level: 'silent',
+  trace() {}, debug() {}, info() {}, warn() {}, error() {}, fatal() {},
+  child() { return baileysLogger; }
+};
+
+let whatsappSock = null;
+let whatsappPronto = false;
+let whatsappQrDataUrl = null;
+let whatsappErro = null;
+
+async function iniciarWhatsApp() {
+  try {
+    const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = await import('@whiskeysockets/baileys');
+    const { state, saveCreds } = await useMultiFileAuthState(BAILEYS_AUTH_DIR);
+    const { version } = await fetchLatestBaileysVersion();
+
+    const sock = makeWASocket({
+      version,
+      auth: state,
+      logger: baileysLogger,
+      browser: ['Projeto Servicos', 'Chrome', '1.0.0']
+    });
+    whatsappSock = sock;
+
+    sock.ev.on('creds.update', saveCreds);
+
+    sock.ev.on('connection.update', async (update) => {
+      const { connection, lastDisconnect, qr } = update;
+      if (qr) {
+        whatsappPronto = false;
+        whatsappErro = null;
+        console.log('\n[WHATSAPP] Escaneie o QR Code abaixo ou acesse http://localhost:3000/whatsapp-qr');
+        qrcodeTerminal.generate(qr, { small: true });
+        try {
+          whatsappQrDataUrl = await QRCode.toDataURL(qr);
+        } catch (e) {
+          whatsappQrDataUrl = null;
+        }
+      }
+
+      if (connection === 'open') {
+        whatsappPronto = true;
+        whatsappQrDataUrl = null;
+        whatsappErro = null;
+        console.log('✅ WhatsApp conectado e pronto para enviar códigos!');
+      } else if (connection === 'close') {
+        whatsappPronto = false;
+        const statusCode = lastDisconnect?.error?.output?.statusCode;
+        const deveReconectar = statusCode !== DisconnectReason.loggedOut;
+        console.log('[WHATSAPP] Conexão fechada. Reconectar:', deveReconectar);
+        if (!deveReconectar) {
+          try { fs.rmSync(BAILEYS_AUTH_DIR, { recursive: true, force: true }); } catch (e) {}
+        }
+        setTimeout(() => iniciarWhatsApp(), 2000);
+      }
+    });
+  } catch (err) {
+    whatsappErro = err.message;
+    console.error('[WHATSAPP] Erro ao iniciar Baileys:', err.message);
+  }
+}
+
+iniciarWhatsApp();
+
+// Página simples para conectar o WhatsApp via QR Code no navegador
+app.get('/whatsapp-qr', (req, res) => {
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  if (whatsappPronto) {
+    return res.send(`
+      <body style="background:#0f172a;color:#34d399;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;">
+        <h2>✅ WhatsApp conectado com sucesso!</h2>
+        <p style="color:#cbd5e1;">Você já pode fechar esta aba e enviar códigos de verificação pelo telefone.</p>
+      </body>
+    `);
+  }
+  const corpo = whatsappQrDataUrl
+    ? `<img src="${whatsappQrDataUrl}" alt="QR Code WhatsApp" style="background:#fff;padding:16px;border-radius:12px;width:280px;height:280px;" /><p style="color:#94a3b8;margin-top:16px;">Abra o WhatsApp no celular → Aparelhos conectados → Conectar aparelho</p>`
+    : `<p style="color:#facc15;">${whatsappErro ? 'Erro: ' + whatsappErro : 'Gerando QR Code do WhatsApp... aguarde alguns segundos.'}</p>${whatsappErro ? '<a href="/whatsapp-reset" style="margin-top:14px;padding:10px 18px;background:#ca8a04;color:#0f172a;font-weight:bold;border-radius:8px;text-decoration:none;">Limpar sessão e tentar novamente</a>' : ''}`;
+  res.send(`
+    <html><head><meta http-equiv="refresh" content="3"><title>Conectar WhatsApp</title></head>
+    <body style="background:#0f172a;color:#f8fafc;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;">
+      <h2 style="color:#eab308;margin-bottom:16px;">Conectar WhatsApp (Envio de Códigos)</h2>
+      ${corpo}
+    </body></html>
+  `);
+});
+
+app.get('/whatsapp-reset', async (req, res) => {
+  whatsappPronto = false;
+  whatsappQrDataUrl = null;
+  whatsappErro = null;
+  try { whatsappSock?.end(undefined); } catch (e) {}
+  try { fs.rmSync(BAILEYS_AUTH_DIR, { recursive: true, force: true }); } catch (e) {}
+  iniciarWhatsApp();
+  res.redirect('/whatsapp-qr');
+});
+
+// ==========================================
+// ROTA: ENVIAR CÓDIGO DE VERIFICAÇÃO POR WHATSAPP (TELEFONE)
+// ==========================================
+app.post('/enviar-codigo-telefone', async (req, res) => {
+  const { telefone } = req.body;
+  const valTel = validarTelefoneReal(telefone);
+  if (!valTel.valido) {
+    return res.status(400).json({ erro: valTel.erro });
+  }
+
+  if (!whatsappPronto || !whatsappSock) {
+    return res.status(503).json({
+      erro: 'WhatsApp ainda não conectado. Acesse /whatsapp-qr para escanear o QR Code.',
+      precisaQr: true
+    });
+  }
+
+  const destinoNormalizado = valTel.limpo;
+  const codigo = crypto.randomInt(100000, 1000000).toString();
+
+  try {
+    const [resultado] = await whatsappSock.onWhatsApp('55' + destinoNormalizado);
+    if (!resultado || !resultado.exists) {
+      return res.status(400).json({ erro: 'Este número não possui WhatsApp ativo.' });
+    }
+
+    db.query('DELETE FROM verificacoes_cadastro WHERE destino = ? AND tipo = ?', [destinoNormalizado, 'telefone'], async (errDel) => {
+      if (errDel) return res.status(500).json({ erro: 'Erro ao preparar verificação.' });
+
+      const sqlIns = `
+        INSERT INTO verificacoes_cadastro (destino, tipo, codigo, verificado, tentativas, expira_em)
+        VALUES (?, 'telefone', ?, 0, 0, DATE_ADD(NOW(), INTERVAL 1 MINUTE))
+      `;
+      db.query(sqlIns, [destinoNormalizado, codigo], async (errIns) => {
+        if (errIns) return res.status(500).json({ erro: 'Erro ao gerar código de verificação.' });
+
+        try {
+          await whatsappSock.sendMessage(resultado.jid, {
+            text: `*Projeto Serviços*\nAqui seu código de 6 dígitos: *${codigo}*\n\nVálido por 1 minuto. Não compartilhe com ninguém.`
+          });
+          res.json({ mensagem: 'Código enviado para o seu WhatsApp!' });
+        } catch (errWpp) {
+          db.query('DELETE FROM verificacoes_cadastro WHERE destino = ? AND tipo = ?', [destinoNormalizado, 'telefone']);
+          console.error('[WHATSAPP] Erro ao enviar mensagem:', errWpp.message);
+          res.status(500).json({ erro: 'Falha ao enviar mensagem pelo WhatsApp.' });
+        }
+      });
+    });
+  } catch (errLookup) {
+    console.error('[WHATSAPP] Erro ao consultar número:', errLookup.message);
+    res.status(500).json({ erro: 'Erro ao validar número no WhatsApp.' });
+  }
+});
+
+// ==========================================
+// ROTA: INVALIDAR CÓDIGO PENDENTE (AO ATUALIZAR/FECHAR PÁGINA)
+// ==========================================
+function handleInvalidarCodigo(req, res) {
+  const tipo = req.body?.tipo === 'telefone' ? 'telefone' : 'email';
+  const rawDestino = req.body?.destino ?? req.body?.email ?? req.body?.telefone ?? '';
+  const destino = tipo === 'email'
+    ? String(rawDestino).trim().toLowerCase()
+    : normalizarTelefone(rawDestino);
+  if (!destino) return res.status(204).end();
+  db.query(
+    'DELETE FROM verificacoes_cadastro WHERE destino = ? AND tipo = ? AND verificado = 0',
+    [destino, tipo],
+    () => res.status(204).end()
+  );
+}
+app.post('/invalidar-codigo', handleInvalidarCodigo);
+app.post('/invalidar-codigo-email', handleInvalidarCodigo);
+
+// ==========================================
+// ROTA: VERIFICAR CÓDIGO DE 6 DÍGITOS (E-MAIL OU TELEFONE)
+// ==========================================
+app.post('/verificar-codigo', async (req, res) => {
+  const tipo = req.body?.tipo === 'telefone' ? 'telefone' : 'email';
+  const { destino, codigo } = req.body;
+  if (!destino || !codigo) {
+    return res.status(400).json({ erro: `Informe o ${tipo === 'email' ? 'e-mail' : 'telefone'} e o código de 6 dígitos.` });
+  }
+
+  const destinoNormalizado = tipo === 'email'
+    ? String(destino).trim().toLowerCase()
+    : normalizarTelefone(destino);
+
+  const sql = `
+    SELECT * FROM verificacoes_cadastro
+    WHERE destino = ? AND tipo = ?
+    ORDER BY id DESC LIMIT 1
+  `;
+  db.query(sql, [destinoNormalizado, tipo], (err, rows) => {
+    if (err) return res.status(500).json({ erro: 'Erro ao validar código.' });
+    if (rows.length === 0) {
+      return res.status(400).json({ erro: 'Nenhum código ativo encontrado. Solicite um novo código.' });
+    }
+
+    const reg = rows[0];
+    if (new Date(reg.expira_em) < new Date()) {
+      db.query('DELETE FROM verificacoes_cadastro WHERE id = ?', [reg.id]);
+      return res.status(400).json({ erro: 'Código expirado (1 minuto). Solicite um novo código.' });
+    }
+    if (reg.tentativas >= 5) {
+      return res.status(429).json({ erro: 'Muitas tentativas inválidas. Solicite um novo código.' });
+    }
+
+    if (String(codigo).trim() !== String(reg.codigo)) {
+      db.query('UPDATE verificacoes_cadastro SET tentativas = tentativas + 1 WHERE id = ?', [reg.id]);
+      return res.status(400).json({ erro: 'Código incorreto.' });
+    }
+
+    db.query('UPDATE verificacoes_cadastro SET verificado = 1 WHERE id = ?', [reg.id], (errUpd) => {
+      if (errUpd) return res.status(500).json({ erro: 'Erro ao confirmar verificação.' });
+      res.json({ mensagem: `${tipo === 'email' ? 'E-mail' : 'Telefone'} confirmado com sucesso!`, verificado: true });
+    });
+  });
+});
+
+// ==========================================
 // ROTA 1: REGISTRO DE USUÁRIO (Cliente ou Trabalhador)
 // ==========================================
 app.post('/registrar', async (req, res) => {
@@ -38,6 +385,40 @@ app.post('/registrar', async (req, res) => {
   // Validação simples do tipo
   if (!tipo || (tipo !== 'cliente' && tipo !== 'trabalhador')) {
     return res.status(400).json({ erro: 'Informe um tipo válido: "cliente" ou "trabalhador".' });
+  }
+
+  // Validação de e-mail e telefone reais
+  const valEmail = await validarEmailReal(email);
+  if (!valEmail.valido) {
+    return res.status(400).json({ erro: valEmail.erro });
+  }
+  const valTel = validarTelefoneReal(telefone);
+  if (!valTel.valido) {
+    return res.status(400).json({ erro: valTel.erro });
+  }
+  const emailNormalizado = valEmail.email;
+  const telefoneNormalizado = valTel.limpo;
+
+  // Verifica se e-mail e telefone possuem código confirmado
+  const sqlVerif = `
+    SELECT tipo FROM verificacoes_cadastro
+    WHERE ((destino = ? AND tipo = 'email') OR (destino = ? AND tipo = 'telefone'))
+      AND verificado = 1
+      AND expira_em >= DATE_SUB(NOW(), INTERVAL 30 MINUTE)
+  `;
+  const verifRows = await new Promise((resolve, reject) => {
+    db.query(sqlVerif, [emailNormalizado, telefoneNormalizado], (errV, rowsV) => {
+      if (errV) reject(errV);
+      else resolve(rowsV);
+    });
+  }).catch(() => null);
+
+  if (!verifRows) {
+    return res.status(500).json({ erro: 'Erro ao verificar confirmações de contato.' });
+  }
+  const tiposConfirmados = new Set(verifRows.map((r) => r.tipo));
+  if (!tiposConfirmados.has('email') || !tiposConfirmados.has('telefone')) {
+    return res.status(400).json({ erro: 'Confirme o código de 6 dígitos enviado no e-mail e no WhatsApp antes de finalizar o cadastro.' });
   }
 
   // Se for trabalhador, valida horários obrigatórios (ao menos 1 dia e 1 período)
@@ -68,7 +449,7 @@ app.post('/registrar', async (req, res) => {
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     db.query(sql, [
-      usuario, email, telefone, senhaCriptografada, cpf,
+      usuario, emailNormalizado, telefoneNormalizado, senhaCriptografada, cpf,
       endereco || null, cidade || null, estado || null, cep || null,
       latitude || null, longitude || null
     ], (err, result) => {
@@ -78,6 +459,12 @@ app.post('/registrar', async (req, res) => {
         }
         return res.status(500).json({ erro: 'Erro interno no banco de dados.' });
       }
+
+      // Remove códigos já utilizados
+      db.query(
+        "DELETE FROM verificacoes_cadastro WHERE (destino = ? AND tipo = 'email') OR (destino = ? AND tipo = 'telefone')",
+        [emailNormalizado, telefoneNormalizado]
+      );
 
       if (tipo === 'trabalhador' && Array.isArray(horarios) && horarios.length > 0) {
         const idTrabalhador = result.insertId;

@@ -37,6 +37,17 @@ mysql -u root -p < database.sql
 
 > **Atenção:** Verifique as credenciais de conexão com o MySQL no início do arquivo `server.js` (`host`, `user`, `password`, `database`). Por padrão está configurado para `localhost`, usuário `root`, banco `projetoservicos`.
 
+### 2.1. Verificação de E-mail com código de 6 dígitos (EmailJS)
+
+O envio do código de 6 dígitos para o e-mail é feito diretamente no navegador via **EmailJS** (sem envio de e-mail pelo Node.js); apenas o código enviado/digitado vai ao servidor Node.js para validação.
+
+1. Crie uma conta gratuita em [emailjs.com](https://www.emailjs.com/) e conecte um serviço de e-mail (ex: Gmail).
+2. Crie um template contendo as variáveis `{{to_email}}` (destinatário) e `{{codigo}}` (ou `{{passcode}}`).
+3. Em [`public/index.html`](./public/index.html), preencha suas 3 chaves no topo do script:
+   - `EMAILJS_PUBLIC_KEY`
+   - `EMAILJS_SERVICE_ID`
+   - `EMAILJS_TEMPLATE_ID`
+
 ### 3. Iniciar o servidor
 
 Para rodar em produção:
