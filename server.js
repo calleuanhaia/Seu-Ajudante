@@ -160,7 +160,7 @@ app.post('/enviar-codigo-email', async (req, res) => {
 const BAILEYS_AUTH_DIR = path.join(__dirname, '.baileys_auth');
 const baileysLogger = {
   level: 'silent',
-  trace() {}, debug() {}, info() {}, warn() {}, error() {}, fatal() {},
+  trace() { }, debug() { }, info() { }, warn() { }, error() { }, fatal() { },
   child() { return baileysLogger; }
 };
 
@@ -210,7 +210,7 @@ async function iniciarWhatsApp() {
         const deveReconectar = statusCode !== DisconnectReason.loggedOut;
         console.log('[WHATSAPP] Conexão fechada. Reconectar:', deveReconectar);
         if (!deveReconectar) {
-          try { fs.rmSync(BAILEYS_AUTH_DIR, { recursive: true, force: true }); } catch (e) {}
+          try { fs.rmSync(BAILEYS_AUTH_DIR, { recursive: true, force: true }); } catch (e) { }
         }
         setTimeout(() => iniciarWhatsApp(), 2000);
       }
@@ -250,8 +250,8 @@ app.get('/whatsapp-reset', async (req, res) => {
   whatsappPronto = false;
   whatsappQrDataUrl = null;
   whatsappErro = null;
-  try { whatsappSock?.end(undefined); } catch (e) {}
-  try { fs.rmSync(BAILEYS_AUTH_DIR, { recursive: true, force: true }); } catch (e) {}
+  try { whatsappSock?.end(undefined); } catch (e) { }
+  try { fs.rmSync(BAILEYS_AUTH_DIR, { recursive: true, force: true }); } catch (e) { }
   iniciarWhatsApp();
   res.redirect('/whatsapp-qr');
 });
@@ -1247,7 +1247,7 @@ function validarHorarioTrabalhador(id_trabalhador, data_agendamento, hora_agenda
     });
 
     if (!dentroDeAlgumPeriodo) {
-      const periodos = horarios.map(h => `${h.periodo}: ${h.hora_inicio.substring(0,5)}–${h.hora_fim.substring(0,5)}`).join(', ');
+      const periodos = horarios.map(h => `${h.periodo}: ${h.hora_inicio.substring(0, 5)}–${h.hora_fim.substring(0, 5)}`).join(', ');
       return callback(null, { valido: false, erro: `Horário fora do expediente do prestador. Períodos disponíveis: ${periodos}` });
     }
 
